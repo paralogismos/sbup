@@ -6,8 +6,8 @@ EXT=sh
 SRC_FILE=$(EXEC).$(EXT)
 
 # Default installation directory.
-DIR=/usr/local/bin
-INSTALL_PATH=$(DIR)/$(EXEC)
+INSTALL_DIR=/usr/local/bin
+INSTALL_PATH=$(INSTALL_DIR)/$(EXEC)
 
 # Uninstall record.
 UNINST=Uninstall
@@ -18,7 +18,7 @@ install:
 	@printf "%s\n" $(INSTALL_PATH) > $(UNINST)
 	@chmod 0444 $(UNINST)        # Make uninstall record read-only
 	@chmod 0111 $(INSTALL_PATH)  # Set executable permissions
-	@echo $(EXEC) installed in $(DIR).
+	@echo $(EXEC) installed in $(INSTALL_DIR).
 
 uninstall:
 	@xargs rm -f < $(UNINST)
