@@ -25,6 +25,10 @@ sbcl_file=${sbcl_file%%\?*}
 # Construct build directory name.
 sbcl_dir=$cwd/sbcl-$sbcl_latest
 
+sbup_diagnostic() {
+    printf "*** %s ***\n" "$1"
+}
+
 check_sbcl() {
     if [ "$sbcl_installed" \< "$sbcl_latest" ]
     then
@@ -44,7 +48,7 @@ download_sbcl() {
         echo "Downloading SBCL $sbcl_latest..."
         curl -L $sbcl_redirect --remote-name
     else
-        echo "Latest version of SBCL not found"
+        sbup_diagnostic "Latest version of SBCL not found"
     fi
 }
 
@@ -56,7 +60,7 @@ unpack_sbcl() {
         tar -xvf $sbcl_file
 
     else
-        echo "SBCL was not downloaded"
+        sbup_diagnostic "SBCL was not downloaded"
     fi
 }
 
@@ -67,7 +71,7 @@ build_sbcl() {
         cd $sbcl_dir
         ./make.sh --fancy
     else
-        echo "SBCL was not extracted"
+        sbup_diagnostic "SBCL was not extracted"
     fi
 }
 
@@ -78,7 +82,7 @@ test_sbcl() {
         cd $sbcl_dir/tests
         ./run-tests.sh
     else
-        echo "SBCL was not built"
+        sbup_diagnostic "SBCL was not built"
     fi
 }
 
@@ -89,7 +93,7 @@ build_sbcl_docs() {
         cd $sbcl_dir/doc/manual
         make
     else
-        echo "No documentation directory found"
+        sbup_diagnostic "No documentation directory found"
     fi
 }
 
@@ -100,7 +104,7 @@ install_sbcl() {
         cd $sbcl_dir
         sudo ./install.sh
     else
-        echo "SBCL was not built"
+        sbup_diagnostic "SBCL was not built"
     fi
 }
 
@@ -116,8 +120,7 @@ show_help() {
     echo "build  ... Download latest version of SBCL and build in current directory"
     echo "test   ... Run tests on the latest build of SBCL"
     echo "update ... Download, build, test and install SBCL"
-    echo ""
-    echo "Invoke sbup with no commands to show this help screen"
+    echo "help   ... Show this help screen"
 }
 
 case "$1" in
@@ -153,7 +156,11 @@ case "$1" in
         build_sbcl_docs
         install_sbcl
         ;;
+    help | "")
+        show_help
+        ;;
     *)
+        sbup_diagnostic "Unrecognized command"
         show_help
         ;;
 esac
