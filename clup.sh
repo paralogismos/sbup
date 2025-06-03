@@ -17,10 +17,30 @@ sbcl_redirect=$(curl --head --silent --write-out "%{redirect_url}" --output /dev
 sbcl_latest=${sbcl_redirect##*/sbcl/}
 sbcl_latest=${sbcl_latest%%/*}
 
-if [ $sbcl_latest = $sbcl_installed ]
+check_sbcl() {
+    if [ "$sbcl_installed" \< "$sbcl_latest" ]
+    then
+        echo "New version of SBCL available: $sbcl_latest"
+    elif [ "$sbcl_latest" = "$sbcl_installed" ]
+    then
+        echo "Latest version of SBCL already installed: $sbcl_latest"
+    else
+        echo "Newer version of SBCL already installed: $sbcl_latest < $sbcl_installed"
+    fi
+}
+
+#download_sbcl() {}
+#unpack_sbcl() {}
+#build_sbcl() {}
+#install_sbcl() {}
+
+if [ "$1" = "check" ]
 then
-    echo "Latest version of SBCL already installed: $sbcl_latest"
-elif [ $sbcl_latest \< $sbcl_installed ]
+    check_sbcl
+elif [ "$sbcl_latest" = "$sbcl_installed" ]
+then
+    echo "THE Latest version of SBCL already installed: $sbcl_latest"
+elif [ "$sbcl_latest" \< "$sbcl_installed" ]
 then
     echo "Newer version of SBCL already installed: $sbcl_latest < $sbcl_installed"
 else
