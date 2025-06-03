@@ -3,7 +3,7 @@
 # A simple script for checking, building, and installing SBCL.
 set -e
 
-clup_version=0.1.0
+clup_version=0.2.0
 cwd=$(pwd)
 
 # Get installed version number.
