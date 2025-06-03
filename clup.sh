@@ -139,7 +139,7 @@ case "$1" in
         then
             download_sbcl
         fi
-        if [ -z $sbcl_dir ]
+        if ! [ -d $sbcl_dir ]
         then
             unpack_sbcl
         fi
