@@ -26,7 +26,7 @@ sbcl_file=${sbcl_file%%\?*}
 sbcl_dir=$cwd/sbcl-$sbcl_latest
 
 sbup_diagnostic() {
-    printf "*** %s ***\n" "$1"
+    printf "\n*** %s ***\n" "$1"
 }
 
 check_sbcl() {
@@ -160,8 +160,8 @@ case "$1" in
         show_help
         ;;
     *)
-        sbup_diagnostic "Unrecognized command"
         show_help
+        sbup_diagnostic "Unrecognized command"
         ;;
 esac
 
