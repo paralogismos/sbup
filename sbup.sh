@@ -1,9 +1,9 @@
 #! /usr/bin/env sh
-# clup.sh
+# sbup.sh
 # A simple script for checking, building, and installing SBCL.
 set -e
 
-clup_version=0.3.0
+sbup_version=0.3.0
 cwd=$(pwd)
 
 # Get installed version number.
@@ -105,9 +105,9 @@ install_sbcl() {
 }
 
 show_help() {
-    printf "clup version %s\n" $clup_version
+    printf "sbup version %s\n" $sbup_version
     echo "Usage:"
-    echo "clup [command] {options}"
+    echo "sbup [command] {options}"
     echo ""
     echo "Commands:"
     echo "check  ... Check for newer version of SBCL"
@@ -116,7 +116,7 @@ show_help() {
     echo "test   ... Run tests on the latest build of SBCL"
     echo "update ... Download, build, test and install SBCL"
     echo ""
-    echo "Invoke clup with no commands to show this help screen"
+    echo "Invoke sbup with no commands to show this help screen"
 }
 
 case "$1" in

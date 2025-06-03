@@ -1,7 +1,7 @@
 # A simple shell script makefile.
 .POSIX:
 
-EXEC=clup
+EXEC=sbup
 EXT=sh
 SRC_FILE=$(EXEC).$(EXT)
 
