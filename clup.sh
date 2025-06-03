@@ -72,7 +72,7 @@ build_sbcl() {
 }
 
 test_sbcl() {
-    if [-d $sbcl_dir ] && [ -d $sbcl_dir/obj ]
+    if [ -d $sbcl_dir ] && [ -d $sbcl_dir/obj ]
     then
         echo "Running SBCL $sbcl_latest tests..."
         cd $sbcl_dir/tests
@@ -113,7 +113,8 @@ show_help() {
     echo "check  ... Check for newer version of SBCL"
     echo "get    ... Download latest version of SBCL to current directory"
     echo "build  ... Download latest version of SBCL and build in current directory"
-    echo "update ... Download, build, and install SBCL"
+    echo "test   ... Run tests on the latest build of SBCL"
+    echo "update ... Download, build, test and install SBCL"
     echo ""
     echo "Invoke clup with no commands to show this help screen"
 }
@@ -133,6 +134,9 @@ case "$1" in
         fi
         unpack_sbcl
         build_sbcl
+        ;;
+    test)
+        test_sbcl
         ;;
     update)
         if ! [ -f $cwd/$sbcl_file ]
