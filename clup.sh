@@ -4,6 +4,7 @@
 set -e
 
 clup_version=0.1.0
+cwd=$(pwd)
 
 # Get installed version number.
 sbcl_installed=$(sbcl --version)
@@ -17,6 +18,13 @@ sbcl_redirect=$(curl --head --silent --write-out "%{redirect_url}" --output /dev
 sbcl_latest=${sbcl_redirect##*/sbcl/}
 sbcl_latest=${sbcl_latest%%/*}
 
+# Construct latest file name.
+sbcl_file=${sbcl_redirect##*$sbcl_latest/}
+sbcl_file=${sbcl_file%%\?*}
+
+# Construct build directory name.
+sbcl_dir=$cwd/sbcl-$sbcl_latest
+
 check_sbcl() {
     if [ "$sbcl_installed" \< "$sbcl_latest" ]
     then
@@ -29,35 +37,119 @@ check_sbcl() {
     fi
 }
 
-#download_sbcl() {}
-#unpack_sbcl() {}
-#build_sbcl() {}
-#install_sbcl() {}
+# Download SBCL to current directory.
+download_sbcl() {
+    if [ -n $sbcl_redirect ]
+    then
+        echo "Downloading SBCL $sbcl_latest..."
+        curl -L $sbcl_redirect --remote-name
+    else
+        echo "Latest version of SBCL not found"
+    fi
+}
 
-if [ "$1" = "check" ]
-then
-    check_sbcl
-elif [ "$sbcl_latest" = "$sbcl_installed" ]
-then
-    echo "THE Latest version of SBCL already installed: $sbcl_latest"
-elif [ "$sbcl_latest" \< "$sbcl_installed" ]
-then
-    echo "Newer version of SBCL already installed: $sbcl_latest < $sbcl_installed"
-else
-    echo "Downloading SBCL $sbcl_latest..."
-    curl -L $sbcl_redirect --remote-name
-    sbcl_file=${sbcl_redirect##*$sbcl_latest/}
-    sbcl_file=${sbcl_file%%\?*}
-    echo "Unpacking SBCL $sbcl_latest..."
-    tar -xvf $sbcl_file
-    sbcl_dir=sbcl-$sbcl_latest
-    echo "Building SBCL $sbcl_latest..."
-    cd $sbcl_dir && ./make.sh --fancy
-    echo "Running SBCL $sbcl_latest tests..."
-    cd tests && ./run-tests.sh
-    echo "Building SBCL $sbcl_latest documentation..."
-    cd ../doc/manual && make
-    echo "Installing SBCL $sbcl_latest..."
-    cd ../.. && sudo ./install.sh
-fi
+# Extract SBCL build directory into current directory.
+unpack_sbcl() {
+    if [ -f $cwd/$sbcl_file ]
+    then
+        echo "Unpacking SBCL $sbcl_latest..."
+        tar -xvf $sbcl_file
+
+    else
+        echo "SBCL was not downloaded"
+    fi
+}
+
+build_sbcl() {
+    if [ -d $sbcl_dir ]
+    then
+        echo "Building SBCL $sbcl_latest..."
+        cd $sbcl_dir
+        ./make.sh --fancy
+    else
+        echo "SBCL was not extracted"
+    fi
+}
+
+test_sbcl() {
+    if [-d $sbcl_dir ] && [ -d $sbcl_dir/obj ]
+    then
+        echo "Running SBCL $sbcl_latest tests..."
+        cd $sbcl_dir/tests
+        ./run-tests.sh
+    else
+        echo "SBCL was not built"
+    fi
+}
+
+build_sbcl_docs() {
+    if [ -d $sbcl_dir ] && [ -d $sbcl_dir/doc ]
+    then
+        echo "Building SBCL $sbcl_latest documentation..."
+        cd $sbcl_dir/doc/manual
+        make
+    else
+        echo "No documentation directory found"
+    fi
+}
+
+install_sbcl() {
+    if [ -d $sbcl_dir ] && [ -d $sbcl_dir/doc ]
+    then
+        echo "Installing SBCL $sbcl_latest..."
+        cd $sbcl_dir
+        sudo ./install.sh
+    else
+        echo "SBCL was not built"
+    fi
+}
+
+show_help() {
+    printf "clup version %s\n" $clup_version
+    echo "Usage:"
+    echo "clup [command] {options}"
+    echo ""
+    echo "Commands:"
+    echo "check  ... Check for newer version of SBCL"
+    echo "get    ... Download latest version of SBCL to current directory"
+    echo "build  ... Download latest version of SBCL and build in current directory"
+    echo "update ... Download, build, and install SBCL"
+    echo ""
+    echo "Invoke clup with no commands to show this help screen"
+}
+
+case "$1" in
+    check)
+        check_sbcl
+        ;;
+    get)
+        download_sbcl
+        ;;
+    build)
+        if ! [ -f $cwd/$sbcl_file ]
+        then
+            echo $cwd/$sbcl_file
+            download_sbcl
+        fi
+        unpack_sbcl
+        build_sbcl
+        ;;
+    update)
+        if ! [ -f $cwd/$sbcl_file ]
+        then
+            download_sbcl
+        fi
+        if [ -z $sbcl_dir ]
+        then
+            unpack_sbcl
+        fi
+        build_sbcl
+        test_sbcl
+        build_sbcl_docs
+        install_sbcl
+        ;;
+    *)
+        show_help
+        ;;
+esac
 
