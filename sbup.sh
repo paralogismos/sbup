@@ -106,11 +106,12 @@ install_sbcl() {
 
 show_help() {
     printf "sbup version %s\n" $sbup_version
+    echo ""
     echo "Usage:"
     echo "sbup [command] {options}"
     echo ""
     echo "Commands:"
-    echo "check  ... Check for newer version of SBCL"
+    echo "check  ... Check for new version of SBCL"
     echo "get    ... Download latest version of SBCL to current directory"
     echo "build  ... Download latest version of SBCL and build in current directory"
     echo "test   ... Run tests on the latest build of SBCL"
