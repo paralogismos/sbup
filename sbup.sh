@@ -3,7 +3,7 @@
 # A simple script for checking, building, and installing SBCL.
 set -e
 
-sbup_version=0.4.0
+sbup_version=0.5.0
 cwd=$(pwd)
 
 # Get installed version number.
