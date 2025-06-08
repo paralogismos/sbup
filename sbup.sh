@@ -125,7 +125,59 @@ show_help() {
     echo "help   ... Show this help screen"
 }
 
-case "$1" in
+# Parse script commands.
+command=
+modifier=
+
+if ! [ -z ${1%%-*} ] ; then
+    command="$1"
+    shift
+fi
+if ! [ -z ${1%%-*} ] ; then
+    modifier="$1"
+    shift
+fi
+
+# Parse script options.
+opt1=  # boolean
+opt2=  # boolean
+opt3=  # single argument required
+opt4=  # boolean
+
+for optarg in $@
+do
+    # Extract options and arguments.
+    opt=${optarg%%=*}
+    arg=${optarg#*=}
+
+    # Handle options with no arguments.
+    if [ "$opt" = "$arg" ] && [ "${#arg}" -eq "${#optarg}" ] ; then
+        arg=""
+    fi
+    case "$opt" in
+        --opt1)
+            opt1=true
+            ;;
+        --opt2)
+            opt2=true
+            ;;
+        --opt3)
+            if [ -z "$arg" ] ; then
+                script_fail "Option requires 1 argument" "$opt"
+            fi
+            opt3="$arg"
+            ;;
+        --opt4)
+            opt4=true
+            ;;
+        *)
+            script_fail "unrecognized option" "$opt"
+            ;;
+    esac
+done
+
+# Handle commands.
+case "$command" in
     check)
         check_sbcl
         ;;
@@ -162,8 +214,7 @@ case "$1" in
         show_help
         ;;
     *)
-        show_help
-        sbup_fail "Unrecognized command"
+        sbup_fail "Unrecognized command" "$command"
         ;;
 esac
 
