@@ -25,8 +25,10 @@ sbcl_file=${sbcl_file%%\?*}
 # Construct build directory name.
 sbcl_dir=$cwd/sbcl-$sbcl_latest
 
-sbup_diagnostic() {
-    printf "\n*** %s ***\n" "$1"
+sbup_fail() {
+    printf "*** %s : %s ***\n" "$1" "$2"
+    show_help
+    exit 1
 }
 
 check_sbcl() {
@@ -48,7 +50,7 @@ download_sbcl() {
         echo "Downloading SBCL $sbcl_latest..."
         curl -L $sbcl_redirect --remote-name
     else
-        sbup_diagnostic "Latest version of SBCL not found"
+        sbup_fail "Latest version of SBCL not found"
     fi
 }
 
@@ -60,7 +62,7 @@ unpack_sbcl() {
         tar -xvf $sbcl_file
 
     else
-        sbup_diagnostic "SBCL was not downloaded"
+        sbup_fail "SBCL was not downloaded"
     fi
 }
 
@@ -71,7 +73,7 @@ build_sbcl() {
         cd $sbcl_dir
         ./make.sh --fancy
     else
-        sbup_diagnostic "SBCL was not extracted"
+        sbup_fail "SBCL was not extracted"
     fi
 }
 
@@ -82,7 +84,7 @@ test_sbcl() {
         cd $sbcl_dir/tests
         ./run-tests.sh
     else
-        sbup_diagnostic "SBCL was not built"
+        sbup_fail "SBCL was not built"
     fi
 }
 
@@ -93,7 +95,7 @@ build_sbcl_docs() {
         cd $sbcl_dir/doc/manual
         make
     else
-        sbup_diagnostic "No documentation directory found"
+        sbup_fail "No documentation directory found"
     fi
 }
 
@@ -104,7 +106,7 @@ install_sbcl() {
         cd $sbcl_dir
         sudo ./install.sh
     else
-        sbup_diagnostic "SBCL was not built"
+        sbup_fail "SBCL was not built"
     fi
 }
 
@@ -161,7 +163,7 @@ case "$1" in
         ;;
     *)
         show_help
-        sbup_diagnostic "Unrecognized command"
+        sbup_fail "Unrecognized command"
         ;;
 esac
 
