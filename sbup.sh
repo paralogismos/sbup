@@ -168,7 +168,7 @@ do
             ;;
         # --opt3)
         #     if [ -z "$arg" ] ; then
-        #         script_fail "Option requires 1 argument" "$opt"
+        #         sbup_fail "Option requires 1 argument" "$opt"
         #     fi
         #     opt3="$arg"
         #     ;;
@@ -176,7 +176,7 @@ do
         #     opt4=true
         #     ;;
         *)
-            script_fail "unrecognized option" "$opt"
+            sbup_fail "unrecognized option" "$opt"
             ;;
     esac
 done
