@@ -125,9 +125,12 @@ show_help() {
     echo "help      ... Show this help screen"
     echo ""
     echo "Options:"
-    echo "--notest  ... Disable running of tests with \`update\`"
-    echo "--nodocs  ... Disable building of documentation with \`update\`"
-    echo "--noinst  ... Disable final installation with \`update\`"
+    echo "--notest  ... Disable running of tests"
+    echo "              Used with \`update\`"
+    echo "--nodocs  ... Disable building of documentation"
+    echo "              Used with \`build\` and \`update\`"
+    echo "--noinst  ... Disable final installation"
+    echo "              Used with \`update\`"
 }
 
 # Parse script commands.
@@ -144,9 +147,9 @@ if ! [ -z ${1%%-*} ] ; then
 fi
 
 # Parse script options.
-notest=  # boolean: `--notest` option disables `update` testing phase
-nodocs=  # boolean: `--nodocs` option disables `update` documentation phase
-noinst=  # boolean: `--noinst` option disables `update` installation phase
+notest=  # `--notest` disables `update` testing phase
+nodocs=  # `--nodocs` disables documentation phase for `build` and `update`
+noinst=  # `--noinst` disables `update` installation phase
 #opt3=  # single argument required
 
 
@@ -198,6 +201,9 @@ case "$command" in
         fi
         unpack_sbcl
         build_sbcl
+        if [ -z "$nodocs" ] ; then
+            build_sbcl_docs
+        fi
         ;;
     test)
         test_sbcl
