@@ -6,7 +6,7 @@ EXT=sh
 SRC_FILE=$(EXEC).$(EXT)
 
 # Default installation directory.
-INSTALL_DIR=/usr/local/bin
+INSTALL_DIR=$(HOME)/bin
 INSTALL_PATH=$(INSTALL_DIR)/$(EXEC)
 
 # Uninstall record.
