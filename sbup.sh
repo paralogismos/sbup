@@ -142,8 +142,8 @@ if ! [ -z ${1%%-*} ] ; then
 fi
 
 # Parse script options.
-notest=  # boolean: `--notest` option disables running of tests under `update` command.
-#opt2=  # boolean
+notest=  # boolean: `--notest` option disables `update` running of tests
+nodocs=  # boolean: `--nodocs` option disables `update` building of documentation
 #opt3=  # single argument required
 #opt4=  # boolean
 
@@ -162,9 +162,9 @@ do
         --notest)
             notest=true
             ;;
-        # --opt2)
-        #     opt2=true
-        #     ;;
+        --nodocs)
+            nodocs=true
+            ;;
         # --opt3)
         #     if [ -z "$arg" ] ; then
         #         script_fail "Option requires 1 argument" "$opt"
@@ -210,7 +210,9 @@ case "$command" in
         if [ -z "$notest" ] ; then
             test_sbcl
         fi
-        build_sbcl_docs
+        if [ -z "$nodocs" ] ; then
+            build_sbcl_docs
+        fi
         install_sbcl
         ;;
     help | "")
