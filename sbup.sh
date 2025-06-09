@@ -127,6 +127,7 @@ show_help() {
     echo "Options:"
     echo "--notest  ... Disable running of tests with \`update\`"
     echo "--nodocs  ... Disable building of documentation with \`update\`"
+    echo "--noinst  ... Disable final installation with \`update\`"
 }
 
 # Parse script commands.
@@ -143,10 +144,11 @@ if ! [ -z ${1%%-*} ] ; then
 fi
 
 # Parse script options.
-notest=  # boolean: `--notest` option disables `update` running of tests
-nodocs=  # boolean: `--nodocs` option disables `update` building of documentation
+notest=  # boolean: `--notest` option disables `update` testing phase
+nodocs=  # boolean: `--nodocs` option disables `update` documentation phase
+noinst=  # boolean: `--noinst` option disables `update` installation phase
 #opt3=  # single argument required
-#opt4=  # boolean
+
 
 for optarg in $@
 do
@@ -166,14 +168,14 @@ do
         --nodocs)
             nodocs=true
             ;;
+        --noinst)
+            noinst=true
+            ;;
         # --opt3)
         #     if [ -z "$arg" ] ; then
         #         sbup_fail "Option requires 1 argument" "$opt"
         #     fi
         #     opt3="$arg"
-        #     ;;
-        # --opt4)
-        #     opt4=true
         #     ;;
         *)
             sbup_fail "unrecognized option" "$opt"
@@ -214,7 +216,9 @@ case "$command" in
         if [ -z "$nodocs" ] ; then
             build_sbcl_docs
         fi
-        install_sbcl
+        if [ -z "$noinst" ] ; then
+            install_sbcl
+        fi
         ;;
     help | "")
         show_help
