@@ -123,6 +123,9 @@ show_help() {
     echo "test   ... Run tests on the latest build of SBCL"
     echo "update ... Download, build, test and install SBCL"
     echo "help   ... Show this help screen"
+    echo ""
+    echo "Options:"
+    echo "--notest  ... Disable tests when invoking \`update\`"
 }
 
 # Parse script commands.
@@ -139,10 +142,10 @@ if ! [ -z ${1%%-*} ] ; then
 fi
 
 # Parse script options.
-opt1=  # boolean
-opt2=  # boolean
-opt3=  # single argument required
-opt4=  # boolean
+notest=  # boolean: `--notest` option disables running of tests under `update` command.
+#opt2=  # boolean
+#opt3=  # single argument required
+#opt4=  # boolean
 
 for optarg in $@
 do
@@ -154,22 +157,23 @@ do
     if [ "$opt" = "$arg" ] && [ "${#arg}" -eq "${#optarg}" ] ; then
         arg=""
     fi
+
     case "$opt" in
-        --opt1)
-            opt1=true
+        --notest)
+            notest=true
             ;;
-        --opt2)
-            opt2=true
-            ;;
-        --opt3)
-            if [ -z "$arg" ] ; then
-                script_fail "Option requires 1 argument" "$opt"
-            fi
-            opt3="$arg"
-            ;;
-        --opt4)
-            opt4=true
-            ;;
+        # --opt2)
+        #     opt2=true
+        #     ;;
+        # --opt3)
+        #     if [ -z "$arg" ] ; then
+        #         script_fail "Option requires 1 argument" "$opt"
+        #     fi
+        #     opt3="$arg"
+        #     ;;
+        # --opt4)
+        #     opt4=true
+        #     ;;
         *)
             script_fail "unrecognized option" "$opt"
             ;;
@@ -185,8 +189,7 @@ case "$command" in
         download_sbcl
         ;;
     build)
-        if ! [ -f $cwd/$sbcl_file ]
-        then
+        if ! [ -f $cwd/$sbcl_file ] ; then
             echo $cwd/$sbcl_file
             download_sbcl
         fi
@@ -197,16 +200,16 @@ case "$command" in
         test_sbcl
         ;;
     update)
-        if ! [ -f $cwd/$sbcl_file ]
-        then
+        if ! [ -f $cwd/$sbcl_file ] ; then
             download_sbcl
         fi
-        if ! [ -d $sbcl_dir ]
-        then
+        if ! [ -d $sbcl_dir ] ; then
             unpack_sbcl
         fi
         build_sbcl
-        test_sbcl
+        if [ -z "$notest" ] ; then
+            test_sbcl
+        fi
         build_sbcl_docs
         install_sbcl
         ;;
