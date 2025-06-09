@@ -117,15 +117,16 @@ show_help() {
     echo "sbup [command] {options}"
     echo ""
     echo "Commands:"
-    echo "check  ... Check for new version of SBCL"
-    echo "get    ... Download latest version of SBCL to current directory"
-    echo "build  ... Download latest version of SBCL and build in current directory"
-    echo "test   ... Run tests on the latest build of SBCL"
-    echo "update ... Download, build, test and install SBCL"
-    echo "help   ... Show this help screen"
+    echo "check     ... Check for new version of SBCL"
+    echo "get       ... Download latest version of SBCL to current directory"
+    echo "build     ... Download latest version of SBCL and build in current directory"
+    echo "test      ... Run tests on the latest build of SBCL"
+    echo "update    ... Download, build, test and install SBCL"
+    echo "help      ... Show this help screen"
     echo ""
     echo "Options:"
-    echo "--notest  ... Disable tests when invoking \`update\`"
+    echo "--notest  ... Disable running of tests with \`update\`"
+    echo "--nodocs  ... Disable building of documentation with \`update\`"
 }
 
 # Parse script commands.
