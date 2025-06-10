@@ -18,8 +18,16 @@ sbcl_installed=${sbcl_installed##*[ ]}
 
 # Get a download url.
 sbcl_download="https://sourceforge.net/projects/sbcl/files/latest/download"
-sbcl_redirect=$(curl --head --silent --write-out "%{redirect_url}" --output /dev/null $sbcl_download)
-#sbcl_redirect=$(wget --spider --force-html $sbcl_download 2>&1 | grep -m 1 Location)
+if type curl > /dev/null ; then
+    sbcl_redirect=$(curl --head --silent --write-out "%{redirect_url}" --output /dev/null $sbcl_download)
+elif type wget > /dev/null ; then
+    sbcl_redirect=$(wget --spider --force-html $sbcl_download 2>&1 | grep -m 1 Location)
+else
+    type curl
+    type wget
+    echo "$0: Either curl or wget must be installed"
+    exit 1
+fi
 
 # Get latest version number.
 sbcl_latest=${sbcl_redirect##*/sbcl/}
