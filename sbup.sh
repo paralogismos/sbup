@@ -25,7 +25,7 @@ elif type wget > /dev/null ; then
 else
     type curl
     type wget
-    echo "$0: Either curl or wget must be installed"
+    echo ${0##*/}": Either \`curl\` or \`wget\` must be installed"
     exit 1
 fi
 
