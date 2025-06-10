@@ -6,6 +6,12 @@ set -e
 sbup_version=0.7.0
 cwd=$(pwd)
 
+# Check for installed SBCL
+if ! type sbcl ; then
+    echo "SBCL is not currently installed: no update possible"
+    exit 1
+fi
+
 # Get installed version number.
 sbcl_installed=$(sbcl --version)
 sbcl_installed=${sbcl_installed##*[ ]}
@@ -13,6 +19,7 @@ sbcl_installed=${sbcl_installed##*[ ]}
 # Get a download url.
 sbcl_download="https://sourceforge.net/projects/sbcl/files/latest/download"
 sbcl_redirect=$(curl --head --silent --write-out "%{redirect_url}" --output /dev/null $sbcl_download)
+#sbcl_redirect=$(wget --spider --force-html $sbcl_download 2>&1 | grep -m 1 Location)
 
 # Get latest version number.
 sbcl_latest=${sbcl_redirect##*/sbcl/}
