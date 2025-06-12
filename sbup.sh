@@ -40,10 +40,10 @@ sbcl_file=${sbcl_file%%\?*}
 # Construct build directory name.
 sbcl_dir=$cwd/sbcl-$sbcl_latest
 
-sbup_fail() {
-    printf "*** %s : %s ***\n" "$1" "$2"
+script_fail() {
+    printf "*** %s : %s ***\n" "$1" "$2" >&2
     show_help
-    exit 1
+    exit 2
 }
 
 check_sbcl() {
@@ -65,7 +65,7 @@ download_sbcl() {
         echo "Downloading SBCL $sbcl_latest..."
         curl -L $sbcl_redirect --remote-name
     else
-        sbup_fail "Latest version of SBCL not found"
+        script_fail "Latest version of SBCL not found"
     fi
 }
 
@@ -77,7 +77,7 @@ unpack_sbcl() {
         tar -xvf $sbcl_file
 
     else
-        sbup_fail "SBCL was not downloaded"
+        script_fail "SBCL was not downloaded"
     fi
 }
 
@@ -88,7 +88,7 @@ build_sbcl() {
         cd $sbcl_dir
         ./make.sh --fancy
     else
-        sbup_fail "SBCL was not extracted"
+        script_fail "SBCL was not extracted"
     fi
 }
 
@@ -99,7 +99,7 @@ test_sbcl() {
         cd $sbcl_dir/tests
         ./run-tests.sh
     else
-        sbup_fail "SBCL was not built"
+        script_fail "SBCL was not built"
     fi
 }
 
@@ -110,7 +110,7 @@ build_sbcl_docs() {
         cd $sbcl_dir/doc/manual
         make
     else
-        sbup_fail "No documentation directory found"
+        script_fail "No documentation directory found"
     fi
 }
 
@@ -121,7 +121,7 @@ install_sbcl() {
         cd $sbcl_dir
         sudo ./install.sh
     else
-        sbup_fail "SBCL was not built"
+        script_fail "SBCL was not built"
     fi
 }
 
@@ -165,8 +165,6 @@ fi
 notest=  # `--notest` disables `update` testing phase
 nodocs=  # `--nodocs` disables documentation phase for `build` and `update`
 noinst=  # `--noinst` disables `update` installation phase
-#opt3=  # single argument required
-
 
 for optarg in $@
 do
@@ -191,12 +189,12 @@ do
             ;;
         # --opt3)
         #     if [ -z "$arg" ] ; then
-        #         sbup_fail "Option requires 1 argument" "$opt"
+        #         script_fail "Option requires 1 argument" "$opt"
         #     fi
         #     opt3="$arg"
         #     ;;
         *)
-            sbup_fail "unrecognized option" "$opt"
+            script_fail "unrecognized option" "$opt"
             ;;
     esac
 done
@@ -245,7 +243,7 @@ case "$command" in
         show_help
         ;;
     *)
-        sbup_fail "Unrecognized command" "$command"
+        script_fail "Unrecognized command" "$command"
         ;;
 esac
 
