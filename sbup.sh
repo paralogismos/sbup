@@ -42,7 +42,7 @@ sbcl_dir=$cwd/sbcl-$sbcl_latest
 
 script_fail() {
     printf "*** %s : %s ***\n" "$1" "$2" >&2
-    show_help
+    usage
     exit 2
 }
 
@@ -125,7 +125,7 @@ install_sbcl() {
     fi
 }
 
-show_help() {
+usage() {
     printf "sbup version %s\n" $sbup_version
     echo ""
     echo "Usage:"
@@ -240,7 +240,7 @@ case "$command" in
         fi
         ;;
     help | "")
-        show_help
+        usage
         ;;
     *)
         script_fail "Unrecognized command" "$command"
