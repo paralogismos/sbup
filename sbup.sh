@@ -166,36 +166,26 @@ notest=  # `--notest` disables `update` testing phase
 nodocs=  # `--nodocs` disables documentation phase for `build` and `update`
 noinst=  # `--noinst` disables `update` installation phase
 
-for optarg in $@
-do
-    # Extract options and arguments.
-    opt=${optarg%%=*}
-    arg=${optarg#*=}
-
-    # Handle options with no arguments.
-    if [ "$opt" = "$arg" ] && [ "${#arg}" -eq "${#optarg}" ] ; then
-        arg=""
+# Check long options for required arguments.
+require_arg() {
+    if [ -z "$OPTARG" ] ; then
+        script_fail "Argument required" "--$OPT"
     fi
+}
 
-    case "$opt" in
-        --notest)
-            notest=true
-            ;;
-        --nodocs)
-            nodocs=true
-            ;;
-        --noinst)
-            noinst=true
-            ;;
-        # --opt3)
-        #     if [ -z "$arg" ] ; then
-        #         script_fail "Option requires 1 argument" "$opt"
-        #     fi
-        #     opt3="$arg"
-        #     ;;
-        *)
-            script_fail "unrecognized option" "$opt"
-            ;;
+while getopts -: OPT
+do
+    if [ $OPT = "-" ]  ; then
+        OPT=${OPTARG%%=*}     # get long option
+        OPTARG=${OPTARG#$OPT}  # get long option argument
+        OPTARG=${OPTARG#=}
+    fi
+    case "$OPT" in
+        notest ) notest=true ;;
+        nodocs ) nodocs=true ;;
+        noinst ) noinst=true ;;
+        \?) usage ; exit 2 ;; # short option fail reported by `getopts`
+        *)  script_fail "Unrecognized option" "--$OPT" ;;  # long option fail
     esac
 done
 
