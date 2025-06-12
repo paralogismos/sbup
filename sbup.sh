@@ -132,20 +132,20 @@ usage() {
     echo "sbup [command] {options}"
     echo ""
     echo "Commands:"
-    echo "check     ... Check for new version of SBCL"
-    echo "get       ... Download latest version of SBCL to current directory"
-    echo "build     ... Download latest version of SBCL and build in current directory"
-    echo "test      ... Run tests on the latest build of SBCL"
-    echo "update    ... Download, build, test and install SBCL"
-    echo "help      ... Show this help screen"
+    echo "check        ... Check for new version of SBCL"
+    echo "get          ... Download latest version of SBCL to current directory"
+    echo "build        ... Download latest version of SBCL and build in current directory"
+    echo "test         ... Run tests on the latest build of SBCL"
+    echo "update       ... Download, build, test and install SBCL"
+    echo "help         ... Show this help screen"
     echo ""
     echo "Options:"
-    echo "--notest  ... Disable running of tests"
-    echo "              Used with \`update\`"
-    echo "--nodocs  ... Disable building of documentation"
-    echo "              Used with \`build\` and \`update\`"
-    echo "--noinst  ... Disable final installation"
-    echo "              Used with \`update\`"
+    echo "--notest     ... Disable running of tests"
+    echo "                 Used with \`update\`"
+    echo "--nodocs     ... Disable building of documentation"
+    echo "                 Used with \`build\` and \`update\`"
+    echo "--noinstall  ... Disable final installation"
+    echo "                 Used with \`update\`"
 }
 
 # Parse script commands.
@@ -162,9 +162,9 @@ if ! [ -z ${1%%-*} ] ; then
 fi
 
 # Parse script options.
-notest=  # `--notest` disables `update` testing phase
-nodocs=  # `--nodocs` disables documentation phase for `build` and `update`
-noinst=  # `--noinst` disables `update` installation phase
+notest=     # `--notest` disables `update` testing phase
+nodocs=     # `--nodocs` disables documentation phase for `build` and `update`
+noinstall=  # `--noinstall` disables `update` installation phase
 
 # Check long options for required arguments.
 require_arg() {
@@ -183,7 +183,7 @@ do
     case "$OPT" in
         notest ) notest=true ;;
         nodocs ) nodocs=true ;;
-        noinst ) noinst=true ;;
+        noinstall ) noinstall=true ;;
         \?) usage ; exit 2 ;; # short option fail reported by `getopts`
         *)  script_fail "Unrecognized option" "--$OPT" ;;  # long option fail
     esac
@@ -225,7 +225,7 @@ case "$command" in
         if [ -z "$nodocs" ] ; then
             build_sbcl_docs
         fi
-        if [ -z "$noinst" ] ; then
+        if [ -z "$noinstall" ] ; then
             install_sbcl
         fi
         ;;
