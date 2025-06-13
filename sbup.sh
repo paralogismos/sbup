@@ -86,7 +86,7 @@ build_sbcl() {
     then
         echo "Building SBCL $sbcl_latest..."
         cd $sbcl_dir
-        ./make.sh --fancy
+        sh make.sh $1
     else
         script_fail "SBCL was not extracted"
     fi
@@ -97,7 +97,7 @@ test_sbcl() {
     then
         echo "Running SBCL $sbcl_latest tests..."
         cd $sbcl_dir/tests
-        ./run-tests.sh
+        sh run-tests.sh
     else
         script_fail "SBCL was not built"
     fi
@@ -119,7 +119,7 @@ install_sbcl() {
     then
         echo "Installing SBCL $sbcl_latest..."
         cd $sbcl_dir
-        sudo ./install.sh
+        sudo $1 sh install.sh
     else
         script_fail "SBCL was not built"
     fi
@@ -129,23 +129,24 @@ usage() {
     printf "sbup version %s\n" $sbup_version
     echo ""
     echo "Usage:"
-    echo "sbup [command] {options}"
+    echo "sbup [command] {Sbup options} [-- {SBCL options}]"
     echo ""
     echo "Commands:"
-    echo "check        ... Check for new version of SBCL"
-    echo "get          ... Download latest version of SBCL to current directory"
-    echo "build        ... Download latest version of SBCL and build in current directory"
-    echo "test         ... Run tests on the latest build of SBCL"
-    echo "update       ... Download, build, test and install SBCL"
-    echo "help         ... Show this help screen"
+    echo "check  ... Check for new version of SBCL"
+    echo "get    ... Download latest version of SBCL to current directory"
+    echo "build  ... Download latest version of SBCL and build in current directory"
+    echo "test   ... Run tests on the latest build of SBCL"
+    echo "update ... Download, build, test and install SBCL"
+    echo "help   ... Show this help screen"
     echo ""
     echo "Options:"
-    echo "--notest     ... Disable running of tests"
-    echo "                 Used with \`update\`"
-    echo "--nodocs     ... Disable building of documentation"
-    echo "                 Used with \`build\` and \`update\`"
-    echo "--noinstall  ... Disable final installation"
-    echo "                 Used with \`update\`"
+    echo "-i | --install_root ... Configure SBCL `INSTALL_ROOT`"
+    echo "--notest            ... Disable running of tests"
+    echo "                        Used with \`update\`"
+    echo "--nodocs            ... Disable building of documentation"
+    echo "                        Used with \`build\` and \`update\`"
+    echo "--noinstall         ... Disable final installation"
+    echo "                        Used with \`update\`"
 }
 
 # Parse script commands.
@@ -162,9 +163,10 @@ if ! [ -z ${1%%-*} ] ; then
 fi
 
 # Parse script options.
-notest=     # `--notest` disables `update` testing phase
-nodocs=     # `--nodocs` disables documentation phase for `build` and `update`
-noinstall=  # `--noinstall` disables `update` installation phase
+install_root=  # `--install_root` configures SBCL `INSTALL_ROOT`
+notest=        # `--notest` disables `update` testing phase
+nodocs=        # `--nodocs` disables documentation phase for `build` and `update`
+noinstall=     # `--noinstall` disables `update` installation phase
 
 # Check long options for required arguments.
 require_arg() {
@@ -173,7 +175,7 @@ require_arg() {
     fi
 }
 
-while getopts -: OPT
+while getopts i:-: OPT
 do
     if [ $OPT = "-" ]  ; then
         OPT=${OPTARG%%=*}     # get long option
@@ -181,6 +183,7 @@ do
         OPTARG=${OPTARG#=}
     fi
     case "$OPT" in
+        i | install_root ) require_arg ; install_root="INSTALL_ROOT=$(cd $OPTARG ; pwd)" ;;
         notest ) notest=true ;;
         nodocs ) nodocs=true ;;
         noinstall ) noinstall=true ;;
@@ -188,6 +191,16 @@ do
         *)  script_fail "Unrecognized option" "--$OPT" ;;  # long option fail
     esac
 done
+
+# Form `install.sh` prefix (for binary installs: supercedes `make` option).
+install_prefix=$install_root
+#if [ -n "$install_root" ] ; then install_prefix="$install_root" ; fi
+
+# Form `make.sh` options.
+shift $((OPTIND - 1))
+#remaining_args="$(echo $@)"
+make_suffix="$(echo $@)"
+#if [ -n "$remaining_args" ] ; then make_suffix="$remaining_args" ; fi
 
 # Handle commands.
 case "$command" in
@@ -203,7 +216,7 @@ case "$command" in
             download_sbcl
         fi
         unpack_sbcl
-        build_sbcl
+        build_sbcl $make_suffix
         if [ -z "$nodocs" ] ; then
             build_sbcl_docs
         fi
@@ -218,7 +231,7 @@ case "$command" in
         if ! [ -d $sbcl_dir ] ; then
             unpack_sbcl
         fi
-        build_sbcl
+        build_sbcl $make_suffix
         if [ -z "$notest" ] ; then
             test_sbcl
         fi
@@ -226,7 +239,7 @@ case "$command" in
             build_sbcl_docs
         fi
         if [ -z "$noinstall" ] ; then
-            install_sbcl
+            install_sbcl $install_prefix
         fi
         ;;
     help | "")
@@ -236,4 +249,3 @@ case "$command" in
         script_fail "Unrecognized command" "$command"
         ;;
 esac
-
