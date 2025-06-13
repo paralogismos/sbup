@@ -16,18 +16,30 @@ fi
 sbcl_installed=$(sbcl --version)
 sbcl_installed=${sbcl_installed##*[ ]}
 
-# Get a download url.
-sbcl_download="https://sourceforge.net/projects/sbcl/files/latest/download"
+# Detect downloader.
+downloader=
 if type curl > /dev/null ; then
-    sbcl_redirect=$(curl --head --silent --write-out "%{redirect_url}" --output /dev/null $sbcl_download)
+    downloader=curl
 elif type wget > /dev/null ; then
-    sbcl_redirect=$(wget --spider --force-html $sbcl_download 2>&1 | grep -m 1 Location)
+    downloader=wget
 else
     type curl
     type wget
     echo ${0##*/}": Either \`curl\` or \`wget\` must be installed"
     exit 1
 fi
+
+# Get a download url.
+sbcl_download="https://sourceforge.net/projects/sbcl/files/latest/download"
+sbcl_redirect=
+case "$downloader" in
+    curl )
+        sbcl_redirect=$(curl --head --silent --write-out "%{redirect_url}" --output /dev/null $sbcl_download) ;;
+    wget )
+        sbcl_redirect=$(wget --spider --force-html $sbcl_download 2>&1 | grep -m 1 Location) ;;
+    *)
+        script_fail "Unrecognized downloader" "$downloader" ;;  # should never happen
+esac
 
 # Get latest version number.
 sbcl_latest=${sbcl_redirect##*/sbcl/}
@@ -60,10 +72,17 @@ check_sbcl() {
 
 # Download SBCL to current directory.
 download_sbcl() {
-    if [ -n $sbcl_redirect ]
+    if [ -n "$sbcl_redirect" ]
     then
         echo "Downloading SBCL $sbcl_latest..."
-        curl -L $sbcl_redirect --remote-name
+        case "$downloader" in
+            curl )
+                curl -L $sbcl_redirect --remote-name ;;
+            wget )
+                wget -q --show-progress -O $sbcl_file $sbcl_redirect ;;
+            *)
+                script_fail "Unrecognized downloader" "$downloader" ;;  # should never happen
+        esac
     else
         script_fail "Latest version of SBCL not found"
     fi
@@ -75,7 +94,6 @@ unpack_sbcl() {
     then
         echo "Unpacking SBCL $sbcl_latest..."
         tar -xvf $sbcl_file
-
     else
         script_fail "SBCL was not downloaded"
     fi
