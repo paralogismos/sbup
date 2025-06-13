@@ -86,7 +86,7 @@ build_sbcl() {
     then
         echo "Building SBCL $sbcl_latest..."
         cd $sbcl_dir
-        sh make.sh $1
+        sh make.sh $@
     else
         script_fail "SBCL was not extracted"
     fi
@@ -119,7 +119,9 @@ install_sbcl() {
     then
         echo "Installing SBCL $sbcl_latest..."
         cd $sbcl_dir
-        sudo $1 sh install.sh
+        export INSTALL_ROOT="$1"
+        $2 sh install.sh
+        unset INSTALL_ROOT
     else
         script_fail "SBCL was not built"
     fi
@@ -140,13 +142,14 @@ usage() {
     echo "help   ... Show this help screen"
     echo ""
     echo "Options:"
-    echo "-i | --install_root ... Configure SBCL `INSTALL_ROOT`"
-    echo "--notest            ... Disable running of tests"
-    echo "                        Used with \`update\`"
+    echo "-i | --install_root ... Configure SBCL \`INSTALL_ROOT\`"
     echo "--nodocs            ... Disable building of documentation"
     echo "                        Used with \`build\` and \`update\`"
     echo "--noinstall         ... Disable final installation"
     echo "                        Used with \`update\`"
+    echo "--notest            ... Disable running of tests"
+    echo "                        Used with \`update\`"
+    echo "-u | --user         ... Enable user installation (without \`sudo\`)"
 }
 
 # Parse script commands.
@@ -164,9 +167,10 @@ fi
 
 # Parse script options.
 install_root=  # `--install_root` configures SBCL `INSTALL_ROOT`
-notest=        # `--notest` disables `update` testing phase
 nodocs=        # `--nodocs` disables documentation phase for `build` and `update`
 noinstall=     # `--noinstall` disables `update` installation phase
+notest=        # `--notest` disables `update` testing phase
+user=false     # `--user` signals a user installation (without `sudo`)
 
 # Check long options for required arguments.
 require_arg() {
@@ -175,7 +179,7 @@ require_arg() {
     fi
 }
 
-while getopts i:-: OPT
+while getopts i:u-: OPT
 do
     if [ $OPT = "-" ]  ; then
         OPT=${OPTARG%%=*}     # get long option
@@ -183,24 +187,30 @@ do
         OPTARG=${OPTARG#=}
     fi
     case "$OPT" in
-        i | install_root ) require_arg ; install_root="INSTALL_ROOT=$(cd $OPTARG ; pwd)" ;;
-        notest ) notest=true ;;
-        nodocs ) nodocs=true ;;
-        noinstall ) noinstall=true ;;
-        \?) usage ; exit 2 ;; # short option fail reported by `getopts`
-        *)  script_fail "Unrecognized option" "--$OPT" ;;  # long option fail
+        i | install_root )
+            require_arg ; install_root="$(cd $OPTARG ; pwd)" ;;
+        nodocs )
+            nodocs=true ;;
+        noinstall )
+            noinstall=true ;;
+        notest )
+            notest=true ;;
+        u | user )
+            user=true ;;
+        \?)
+            usage ; exit 2 ;;  # short option fail reported by `getopts`
+        *)
+            script_fail "Unrecognized option" "--$OPT" ;;  # long option fail
     esac
 done
 
-# Form `install.sh` prefix (for binary installs: supercedes `make` option).
-install_prefix=$install_root
-#if [ -n "$install_root" ] ; then install_prefix="$install_root" ; fi
-
 # Form `make.sh` options.
 shift $((OPTIND - 1))
-#remaining_args="$(echo $@)"
 make_suffix="$(echo $@)"
-#if [ -n "$remaining_args" ] ; then make_suffix="$remaining_args" ; fi
+
+# Form `make install` mode prefix.
+install_mode=
+if ! $user  ; then install_mode=sudo ; fi
 
 # Handle commands.
 case "$command" in
@@ -239,7 +249,7 @@ case "$command" in
             build_sbcl_docs
         fi
         if [ -z "$noinstall" ] ; then
-            install_sbcl $install_prefix
+            install_sbcl $install_root $install_mode
         fi
         ;;
     help | "")
