@@ -41,7 +41,7 @@ case "$downloader" in
                              | grep -Eo [[:digit:]]+.[[:digit:]]+.[[:digit:]]+)
         ;;
     wget )
-        sbcl_available=$(wget -q --show-progress -O $sbcl_files_dl \
+        sbcl_available=$(wget -q -O- $sbcl_files_dl \
                              | grep "$sbcl_version_line" \
                              | grep -Eo [[:digit:]]+.[[:digit:]]+.[[:digit:]]+)
         ;;
@@ -196,6 +196,10 @@ usage() {
     echo ""
     echo "Commands:"
     echo "check  ... Check for new version of SBCL"
+    echo "list   ... Show available SBCL versions"
+    echo "           \`list all\` lists all available versions"
+    echo "           \`list recent\` lists the most recent ten versions"
+    echo "           \`list <N>\` lists the most recent <N> versions"
     echo "get    ... Download latest version of SBCL to current directory"
     echo "build  ... Download latest version of SBCL and build in current directory"
     echo "test   ... Run tests on the latest build of SBCL"
