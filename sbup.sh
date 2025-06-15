@@ -197,8 +197,8 @@ usage() {
     echo "Commands:"
     echo "check  ... Check for new version of SBCL"
     echo "list   ... Show available SBCL versions"
+    echo "           \`list\`, \`list recent\` lists the most recent versions"
     echo "           \`list all\` lists all available versions"
-    echo "           \`list recent\` lists the most recent ten versions"
     echo "           \`list <N>\` lists the most recent <N> versions"
     echo "get    ... Download latest version of SBCL to current directory"
     echo "build  ... Download latest version of SBCL and build in current directory"
@@ -286,8 +286,11 @@ case "$command" in
         case "$modifier" in
             all | recent )
                 list_available $modifier
-               ;;
-            "" | *[!0123456789]* )
+                ;;
+            "" )
+                list_available recent
+                ;;
+            *[!0123456789]* )
                 script_fail "Unrecognized command" "$command $modifier"
                 ;;
             * )
