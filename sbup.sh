@@ -30,6 +30,27 @@ else
 fi
 
 # Get a download url.
+sbcl_files_dl="https://sourceforge.net/projects/sbcl/files/sbcl"
+sbcl_version_line='<th scope="row" headers="files_name_h"><a href="/projects/sbcl/files/sbcl/'
+sbcl_available=
+
+case "$downloader" in
+    curl )
+        sbcl_available=$(curl -L --silent $sbcl_files_dl \
+                             | grep "$sbcl_version_line" \
+                             | grep -Eo [[:digit:]]+.[[:digit:]]+.[[:digit:]]+)
+        ;;
+    wget )
+        sbcl_available=$(wget -q --show-progress -O $sbcl_files_dl \
+                             | grep "$sbcl_version_line" \
+                             | grep -Eo [[:digit:]]+.[[:digit:]]+.[[:digit:]]+)
+        ;;
+    * )
+        script_fail "Unrecognized downloader" "$downloader"  # should never happen
+        ;;
+esac
+
+# I'll probably remove this and get the latest version number from the `/files/sbcl/` url.
 sbcl_download="https://sourceforge.net/projects/sbcl/files/latest/download"
 sbcl_redirect=
 case "$downloader" in
@@ -68,6 +89,28 @@ check_sbcl() {
     else
         echo "Newer version of SBCL already installed: $sbcl_latest < $sbcl_installed"
     fi
+}
+
+list_available() {
+    sbcl_show_count=
+    if [ $1 = "recent" ] ;
+    then
+        sbcl_show_count=10 ;
+    elif ! [ $1 = "all" ] ;
+    then
+        sbcl_show_count=$1 ;
+    fi
+    for sbcl_version in $sbcl_available ; do
+        if [ $1 = "all" ] ;
+        then
+            echo $sbcl_version ; continue
+        elif [ $sbcl_show_count -eq 0 ] ;
+        then
+            break
+        else
+            echo $sbcl_version ; sbcl_show_count=$((sbcl_show_count-1))
+        fi
+    done
 }
 
 # Download SBCL to current directory.
@@ -232,13 +275,26 @@ if ! $user  ; then install_mode=sudo ; fi
 
 # Handle commands.
 case "$command" in
-    check)
+    check )
         check_sbcl
         ;;
-    get)
+    list )
+        case "$modifier" in
+            all | recent )
+                list_available $modifier
+               ;;
+            "" | *[!0123456789]* )
+                script_fail "Unrecognized command" "$command $modifier"
+                ;;
+            * )
+                list_available $modifier
+                ;;
+        esac
+        ;;
+    get )
         download_sbcl
         ;;
-    build)
+    build )
         if ! [ -f $cwd/$sbcl_file ] ; then
             echo $cwd/$sbcl_file
             download_sbcl
@@ -249,10 +305,10 @@ case "$command" in
             build_sbcl_docs
         fi
         ;;
-    test)
+    test )
         test_sbcl
         ;;
-    update)
+    update )
         if ! [ -f $cwd/$sbcl_file ] ; then
             download_sbcl
         fi
@@ -270,10 +326,10 @@ case "$command" in
             install_sbcl $install_root $install_mode
         fi
         ;;
-    help | "")
+    help | "" )
         usage
         ;;
-    *)
+    * )
         script_fail "Unrecognized command" "$command"
         ;;
 esac
