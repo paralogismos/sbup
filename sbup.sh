@@ -3,7 +3,7 @@
 # A simple script for checking, building, and installing SBCL.
 set -e
 
-sbup_version=0.9.0
+sbup_version=0.10.0
 sbup_dir=$HOME/.sbup
 if ! [ -d "$sbup_dir" ] ; then mkdir "$sbup_dir" ; fi
 reset_dir=$(pwd)
