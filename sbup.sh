@@ -4,11 +4,15 @@
 set -e
 
 sbup_version=0.9.0
-cwd=$(pwd)
+sbup_dir=$HOME/.sbup
+if ! [ -d "$sbup_dir" ] ; then mkdir "$sbup_dir" ; fi
+reset_dir=$(pwd)
+cd "$sbup_dir"
 
 # Check for installed SBCL
 if ! type sbcl ; then
     echo "SBCL is not currently installed: no update possible"
+    cd "$reset_dir"
     exit 1
 fi
 
@@ -26,6 +30,7 @@ else
     type curl
     type wget
     echo ${0##*/}": Either \`curl\` or \`wget\` must be installed"
+    cd "$reset_dir"
     exit 1
 fi
 
@@ -57,11 +62,12 @@ sbcl_file="sbcl-$sbcl_latest_version-source.tar.bz2"
 
 
 # Construct build directory name.
-sbcl_dir=$cwd/sbcl-$sbcl_latest_version
+sbcl_dir=$sbup_dir/sbcl-$sbcl_latest_version
 
 script_fail() {
     printf "*** %s : %s ***\n" "$1" "$2" >&2
     usage
+    cd "$reset_dir"
     exit 2
 }
 
@@ -105,7 +111,7 @@ download_sbcl() {
     case "$downloader" in
         curl )
             # curl -L $sbcl_redirect --remote-name ;;
-            curl $sbcl_files_dl/$sbcl_latest_version/$sbcl_file --remote-name ;;
+            curl -L $sbcl_files_dl/$sbcl_latest_version/$sbcl_file --remote-name ;;
         wget )
             # wget -q --show-progress -O $sbcl_file $sbcl_redirect ;;
             wget -q --show-progress $sbcl_files_dl/$sbcl_latest_version/$sbcl_file ;;
@@ -116,7 +122,7 @@ download_sbcl() {
 
 # Extract SBCL build directory into current directory.
 unpack_sbcl() {
-    if [ -f $cwd/$sbcl_file ]
+    if [ -f $sbup_dir/$sbcl_file ]
     then
         echo "Unpacking SBCL $sbcl_latest_version..."
         tar -xvf $sbcl_file
@@ -246,7 +252,8 @@ do
         u | user )
             user=true ;;
         \?)
-            usage ; exit 2 ;;  # short option fail reported by `getopts`
+            usage ; cd "$reset_dir"
+            exit 2 ;;  # short option fail reported by `getopts`
         *)
             script_fail "Unrecognized option" "--$OPT" ;;  # long option fail
     esac
@@ -285,8 +292,8 @@ case "$command" in
         download_sbcl
         ;;
     build )
-        if ! [ -f $cwd/$sbcl_file ] ; then
-            echo $cwd/$sbcl_file
+        if ! [ -f $sbup_dir/$sbcl_file ] ; then
+            echo $sbup_dir/$sbcl_file
             download_sbcl
         fi
         unpack_sbcl
@@ -299,7 +306,7 @@ case "$command" in
         test_sbcl
         ;;
     update )
-        if ! [ -f $cwd/$sbcl_file ] ; then
+        if ! [ -f $sbup_dir/$sbcl_file ] ; then
             download_sbcl
         fi
         if ! [ -d $sbcl_dir ] ; then
@@ -323,3 +330,5 @@ case "$command" in
         script_fail "Unrecognized command" "$command"
         ;;
 esac
+
+cd "$reset_dir"
