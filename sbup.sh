@@ -105,7 +105,7 @@ download_sbcl() {
     case "$downloader" in
         curl )
             # curl -L $sbcl_redirect --remote-name ;;
-            curl -L $sbcl_files_dl/$sbcl_latest_version/$sbcl_file --remote-name ;;
+            curl $sbcl_files_dl/$sbcl_latest_version/$sbcl_file --remote-name ;;
         wget )
             # wget -q --show-progress -O $sbcl_file $sbcl_redirect ;;
             wget -q --show-progress $sbcl_files_dl/$sbcl_latest_version/$sbcl_file ;;
