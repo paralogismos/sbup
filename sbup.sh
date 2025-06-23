@@ -5,22 +5,10 @@ set -e
 
 sbup_version=0.10.0
 sbup_dir=$HOME/.sbup
+
 if ! [ -d "$sbup_dir" ] ; then mkdir "$sbup_dir" ; fi
 reset_dir=$(pwd)
 cd "$sbup_dir"
-
-match_version='[[:digit:]]+.[[:digit:]]+.[[:digit:]]+'
-
-# Check for installed SBCL
-if ! type sbcl ; then
-    echo "SBCL is not currently installed: no update possible"
-    cd "$reset_dir"
-    exit 1
-fi
-
-# Get installed version number.
-sbcl_installed=$(sbcl --version)
-sbcl_installed=${sbcl_installed##*[ ]}
 
 # Detect downloader.
 downloader=
@@ -35,6 +23,48 @@ else
     cd "$reset_dir"
     exit 1
 fi
+
+match_version='[[:digit:]]+.[[:digit:]]+.[[:digit:]]+'
+
+usage() {
+    printf "sbup version %s\n" $sbup_version
+    echo ""
+    echo "Usage:"
+    echo "sbup [command] {Sbup options} [-- {SBCL options}]"
+    echo ""
+    echo "Commands:"
+    echo "check  ... Check for new version of SBCL"
+    echo "list   ... Show available SBCL versions"
+    echo "           \`list\`, \`list recent\` lists the most recent versions"
+    echo "           \`list all\` lists all available versions"
+    echo "           \`list <N>\` lists the most recent <N> versions"
+    echo "get    ... Download latest version of SBCL to current directory"
+    echo "build  ... Download latest version of SBCL and build in current directory"
+    echo "test   ... Run tests on the latest build of SBCL"
+    echo "update ... Download, build, test and install SBCL"
+    echo "help   ... Show this help screen"
+    echo ""
+    echo "Options:"
+    echo "-i | --install_root ... Configure SBCL \`INSTALL_ROOT\`"
+    echo "--nodocs            ... Disable building of documentation"
+    echo "                        Used with \`build\` and \`update\`"
+    echo "--noinstall         ... Disable final installation"
+    echo "                        Used with \`update\`"
+    echo "--notest            ... Disable running of tests"
+    echo "                        Used with \`update\`"
+    echo "-u | --user         ... Enable user installation (without \`sudo\`)"
+}
+
+# Check for installed SBCL
+if ! type sbcl ; then
+    echo "SBCL is not currently installed: no update possible"
+    cd "$reset_dir"
+    exit 1
+fi
+
+# Get installed version number.
+sbcl_installed=$(sbcl --version)
+sbcl_installed=${sbcl_installed##*[ ]}
 
 # Get a download url.
 sbcl_files_dl="https://sourceforge.net/projects/sbcl/files/sbcl"
@@ -61,7 +91,6 @@ sbcl_latest_version=$(echo $sbcl_available | awk '{print $1}')
 
 # Construct latest file name.
 sbcl_file="sbcl-$sbcl_latest_version-source.tar.bz2"
-
 
 # Construct build directory name.
 sbcl_dir=$sbup_dir/sbcl-$sbcl_latest_version
@@ -177,35 +206,6 @@ install_sbcl() {
     else
         script_fail "SBCL was not built"
     fi
-}
-
-usage() {
-    printf "sbup version %s\n" $sbup_version
-    echo ""
-    echo "Usage:"
-    echo "sbup [command] {Sbup options} [-- {SBCL options}]"
-    echo ""
-    echo "Commands:"
-    echo "check  ... Check for new version of SBCL"
-    echo "list   ... Show available SBCL versions"
-    echo "           \`list\`, \`list recent\` lists the most recent versions"
-    echo "           \`list all\` lists all available versions"
-    echo "           \`list <N>\` lists the most recent <N> versions"
-    echo "get    ... Download latest version of SBCL to current directory"
-    echo "build  ... Download latest version of SBCL and build in current directory"
-    echo "test   ... Run tests on the latest build of SBCL"
-    echo "update ... Download, build, test and install SBCL"
-    echo "help   ... Show this help screen"
-    echo ""
-    echo "Options:"
-    echo "-i | --install_root ... Configure SBCL \`INSTALL_ROOT\`"
-    echo "--nodocs            ... Disable building of documentation"
-    echo "                        Used with \`build\` and \`update\`"
-    echo "--noinstall         ... Disable final installation"
-    echo "                        Used with \`update\`"
-    echo "--notest            ... Disable running of tests"
-    echo "                        Used with \`update\`"
-    echo "-u | --user         ... Enable user installation (without \`sudo\`)"
 }
 
 # Parse script commands.
