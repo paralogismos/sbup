@@ -9,6 +9,8 @@ if ! [ -d "$sbup_dir" ] ; then mkdir "$sbup_dir" ; fi
 reset_dir=$(pwd)
 cd "$sbup_dir"
 
+match_version='[[:digit:]]+.[[:digit:]]+.[[:digit:]]+'
+
 # Check for installed SBCL
 if ! type sbcl ; then
     echo "SBCL is not currently installed: no update possible"
@@ -42,12 +44,12 @@ case "$downloader" in
     curl )
         sbcl_available=$(curl -L --silent $sbcl_files_dl \
                              | grep "$sbcl_version_line" \
-                             | grep -Eo [[:digit:]]+.[[:digit:]]+.[[:digit:]]+)
+                             | grep -Eo $match_version)
         ;;
     wget )
         sbcl_available=$(wget -q -O- $sbcl_files_dl \
                              | grep "$sbcl_version_line" \
-                             | grep -Eo [[:digit:]]+.[[:digit:]]+.[[:digit:]]+)
+                             | grep -Eo $match_version)
         ;;
     * )
         script_fail "Unrecognized downloader" "$downloader"  # should never happen
