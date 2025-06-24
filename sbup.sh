@@ -39,8 +39,9 @@ usage() {
     echo "           \`list\`, \`list recent\` lists the most recent versions"
     echo "           \`list all\` lists all available versions"
     echo "           \`list <N>\` lists the most recent <N> versions"
-    echo "           \`list dl\`, \`list downloads\`, \`list downloaded\`"
-    echo "           lists all downloaded SBCL tarballs"
+    echo "           \`list downloads\`, \`list downloaded\`, \`list dl\`"
+    echo "               lists all downloaded SBCL tarballs"
+    echo "           \`list built\`, \`list b\` lists all available SBCL builds"
     echo "get    ... Download latest version of SBCL to current directory"
     echo "build  ... Download latest version of SBCL and build in current directory"
     echo "test   ... Run tests on the latest build of SBCL"
@@ -81,6 +82,12 @@ sbcl_downloaded=$(find "$sbup_dir" -maxdepth 1 -type f |
                       grep -E "sbcl-$match_version-source" |
                       grep -Eo $match_version |
                       sort -t. -k 1,1nr -k 2,2nr -k 3,3nr -k 4,4nr)
+
+# Get built version numbers.
+sbcl_built=$(find "$sbup_dir" -maxdepth 1 -type d |
+                 grep "sbcl" |
+                 grep -Eo $match_version |
+                 sort -t. -k 1,1nr -k 2,2nr -k 3,3nr -k 4,4nr)
 
 # Get a download url.
 sbcl_files_dl="https://sourceforge.net/projects/sbcl/files/sbcl"
@@ -296,6 +303,14 @@ case "$command" in
                 for dl in $sbcl_downloaded ; do
                     if [ "$dl" = "$cur_ver" ] ; then printf "> %s <\n" "$dl"
                     else printf "  %s\n" "$dl"
+                    fi
+                done
+                ;;
+            b | built)
+                printf "available SBCL builds:\n"
+                for build in $sbcl_built ; do
+                    if [ "$build" = "$cur_ver" ] ; then printf "> %s <\n" "$build"
+                    else printf "  %s\n" "$build"
                     fi
                 done
                 ;;
