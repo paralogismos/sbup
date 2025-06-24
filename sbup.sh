@@ -2,6 +2,7 @@
 # sbup.sh
 # A simple script for checking, building, and installing SBCL.
 set -e
+#set -x
 
 sbup_version=0.10.0
 sbup_dir=$HOME/.sbup
@@ -38,6 +39,8 @@ usage() {
     echo "           \`list\`, \`list recent\` lists the most recent versions"
     echo "           \`list all\` lists all available versions"
     echo "           \`list <N>\` lists the most recent <N> versions"
+    echo "           \`list dl\`, \`list downloads\`, \`list downloaded\`"
+    echo "           lists all downloaded SBCL tarballs"
     echo "get    ... Download latest version of SBCL to current directory"
     echo "build  ... Download latest version of SBCL and build in current directory"
     echo "test   ... Run tests on the latest build of SBCL"
@@ -55,6 +58,13 @@ usage() {
     echo "-u | --user         ... Enable user installation (without \`sudo\`)"
 }
 
+script_fail() {
+    printf "*** %s : %s ***\n" "$1" "$2" >&2
+    usage
+    cd "$reset_dir"
+    exit 2
+}
+
 # Check for installed SBCL
 if ! type sbcl ; then
     echo "SBCL is not currently installed: no update possible"
@@ -63,8 +73,14 @@ if ! type sbcl ; then
 fi
 
 # Get installed version number.
-sbcl_installed=$(sbcl --version)
-sbcl_installed=${sbcl_installed##*[ ]}
+cur_ver=$(sbcl --version)
+cur_ver=${cur_ver##*[ ]}
+
+# Get downloaded version numbers.
+sbcl_downloaded=$(find "$sbup_dir" -maxdepth 1 -type f |
+                      grep -E "sbcl-$match_version-source" |
+                      grep -Eo $match_version |
+                      sort -t. -k 1,1nr -k 2,2nr -k 3,3nr -k 4,4nr)
 
 # Get a download url.
 sbcl_files_dl="https://sourceforge.net/projects/sbcl/files/sbcl"
@@ -95,22 +111,15 @@ sbcl_file="sbcl-$sbcl_latest_version-source.tar.bz2"
 # Construct build directory name.
 sbcl_dir=$sbup_dir/sbcl-$sbcl_latest_version
 
-script_fail() {
-    printf "*** %s : %s ***\n" "$1" "$2" >&2
-    usage
-    cd "$reset_dir"
-    exit 2
-}
-
 check_sbcl() {
-    if [ "$sbcl_installed" \< "$sbcl_latest_version" ]
+    if [ "$cur_ver" \< "$sbcl_latest_version" ]
     then
         echo "New version of SBCL available: $sbcl_latest_version"
-    elif [ "$sbcl_latest_version" = "$sbcl_installed" ]
+    elif [ "$sbcl_latest_version" = "$cur_ver" ]
     then
         echo "Latest version of SBCL already installed: $sbcl_latest_version"
     else
-        echo "Newer version of SBCL already installed: $sbcl_latest_version < $sbcl_installed"
+        echo "Newer version of SBCL already installed: $sbcl_latest_version < $cur_ver"
     fi
 }
 
@@ -281,6 +290,14 @@ case "$command" in
                 ;;
             "" )
                 list_available recent
+                ;;
+            dl | downloads | downloaded)
+                printf "available SBCL tarballs:\n"
+                for dl in $sbcl_downloaded ; do
+                    if [ "$dl" = "$cur_ver" ] ; then printf "> %s <\n" "$dl"
+                    else printf "  %s\n" "$dl"
+                    fi
+                done
                 ;;
             *[!0123456789]* )
                 script_fail "Unrecognized command" "$command $modifier"
