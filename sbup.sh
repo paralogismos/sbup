@@ -83,11 +83,15 @@ sbcl_downloaded=$(find "$sbup_dir" -maxdepth 1 -type f |
                       grep -Eo $match_version |
                       sort -t. -k 1,1nr -k 2,2nr -k 3,3nr -k 4,4nr)
 
+sbcl_latest_downloaded=$(echo $sbcl_downloaded | awk '{print $1}')
+
 # Get built version numbers.
 sbcl_built=$(find "$sbup_dir" -maxdepth 1 -type d |
                  grep "sbcl" |
                  grep -Eo $match_version |
                  sort -t. -k 1,1nr -k 2,2nr -k 3,3nr -k 4,4nr)
+
+sbcl_latest_built=$(echo $sbcl_built | awk '{print $1}')
 
 # Get a download url.
 sbcl_files_dl="https://sourceforge.net/projects/sbcl/files/sbcl"
@@ -110,23 +114,38 @@ case "$downloader" in
 esac
 
 # Get latest version number.
-sbcl_latest_version=$(echo $sbcl_available | awk '{print $1}')
+sbcl_latest_available=$(echo $sbcl_available | awk '{print $1}')
 
 # Construct latest file name.
-sbcl_file="sbcl-$sbcl_latest_version-source.tar.bz2"
+sbcl_file="sbcl-$sbcl_latest_available-source.tar.bz2"
 
 # Construct build directory name.
-sbcl_dir=$sbup_dir/sbcl-$sbcl_latest_version
+sbcl_dir=$sbup_dir/sbcl-$sbcl_latest_available
+
+# check_sbcl() {
+#     if [ "$cur_ver" \< "$sbcl_latest_available" ]
+#     then
+#         echo "New version of SBCL available: $sbcl_latest_available"
+#     elif [ "$sbcl_latest_available" = "$cur_ver" ]
+#     then
+#         echo "Latest version of SBCL already installed: $sbcl_latest_available"
+#     else
+#         echo "Newer version of SBCL already installed: $sbcl_latest_available < $cur_ver"
+#     fi
+# }
 
 check_sbcl() {
-    if [ "$cur_ver" \< "$sbcl_latest_version" ]
+    if [ "$cur_ver" = "$sbcl_latest_available" ]
     then
-        echo "New version of SBCL available: $sbcl_latest_version"
-    elif [ "$sbcl_latest_version" = "$cur_ver" ]
+        echo "Already using most recent SBCL: $cur_ver"
+    elif [ "$sbcl_latest_built" = "$sbcl_latest_available" ]
     then
-        echo "Latest version of SBCL already installed: $sbcl_latest_version"
+        echo "Most recent SBCL already built: $sbcl_latest_built"
+    elif [ "$sbcl_latest_downloaded" = "$sbcl_latest_available" ]
+    then
+        echo "Most recent SBCL already downloaded: $sbcl_latest_downloaded"
     else
-        echo "Newer version of SBCL already installed: $sbcl_latest_version < $cur_ver"
+        echo "New version of SBCL available: $sbcl_latest_available"
     fi
 }
 
@@ -154,14 +173,14 @@ list_available() {
 
 # Download SBCL to current directory.
 download_sbcl() {
-    echo "Downloading SBCL $sbcl_latest_version..."
+    echo "Downloading SBCL $sbcl_latest_available..."
     case "$downloader" in
         curl )
             # curl -L $sbcl_redirect --remote-name ;;
-            curl -L $sbcl_files_dl/$sbcl_latest_version/$sbcl_file --remote-name ;;
+            curl -L $sbcl_files_dl/$sbcl_latest_available/$sbcl_file --remote-name ;;
         wget )
             # wget -q --show-progress -O $sbcl_file $sbcl_redirect ;;
-            wget -q --show-progress $sbcl_files_dl/$sbcl_latest_version/$sbcl_file ;;
+            wget -q --show-progress $sbcl_files_dl/$sbcl_latest_available/$sbcl_file ;;
         *)
             script_fail "Unrecognized downloader" "$downloader" ;;  # should never happen
     esac
@@ -171,7 +190,7 @@ download_sbcl() {
 unpack_sbcl() {
     if [ -f $sbup_dir/$sbcl_file ]
     then
-        echo "Unpacking SBCL $sbcl_latest_version..."
+        echo "Unpacking SBCL $sbcl_latest_available..."
         tar -xvf $sbcl_file
     else
         script_fail "SBCL was not downloaded"
@@ -181,7 +200,7 @@ unpack_sbcl() {
 build_sbcl() {
     if [ -d $sbcl_dir ]
     then
-        echo "Building SBCL $sbcl_latest_version..."
+        echo "Building SBCL $sbcl_latest_available..."
         cd $sbcl_dir
         sh make.sh $@
     else
@@ -192,7 +211,7 @@ build_sbcl() {
 test_sbcl() {
     if [ -d $sbcl_dir ] && [ -d $sbcl_dir/obj ]
     then
-        echo "Running SBCL $sbcl_latest_version tests..."
+        echo "Running SBCL $sbcl_latest_available tests..."
         cd $sbcl_dir/tests
         sh run-tests.sh
     else
@@ -203,7 +222,7 @@ test_sbcl() {
 build_sbcl_docs() {
     if [ -d $sbcl_dir ] && [ -d $sbcl_dir/doc ]
     then
-        echo "Building SBCL $sbcl_latest_version documentation..."
+        echo "Building SBCL $sbcl_latest_available documentation..."
         cd $sbcl_dir/doc/manual
         make
     else
@@ -214,7 +233,7 @@ build_sbcl_docs() {
 install_sbcl() {
     if [ -d $sbcl_dir ] && [ -d $sbcl_dir/doc ]
     then
-        echo "Installing SBCL $sbcl_latest_version..."
+        echo "Installing SBCL $sbcl_latest_available..."
         cd $sbcl_dir
         export INSTALL_ROOT="$1"
         $2 sh install.sh
