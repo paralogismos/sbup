@@ -122,18 +122,6 @@ sbcl_file="sbcl-$sbcl_latest_available-source.tar.bz2"
 # Construct build directory name.
 sbcl_dir=$sbup_dir/sbcl-$sbcl_latest_available
 
-# check_sbcl() {
-#     if [ "$cur_ver" \< "$sbcl_latest_available" ]
-#     then
-#         echo "New version of SBCL available: $sbcl_latest_available"
-#     elif [ "$sbcl_latest_available" = "$cur_ver" ]
-#     then
-#         echo "Latest version of SBCL already installed: $sbcl_latest_available"
-#     else
-#         echo "Newer version of SBCL already installed: $sbcl_latest_available < $cur_ver"
-#     fi
-# }
-
 check_sbcl() {
     if [ "$cur_ver" = "$sbcl_latest_available" ]
     then
@@ -173,14 +161,13 @@ list_available() {
 
 # Download SBCL to current directory.
 download_sbcl() {
-    echo "Downloading SBCL $sbcl_latest_available..."
+    sbcl_downloading="$sbcl_files_dl/$1/sbcl-$1-source.tar.bz2"
+    echo "Downloading SBCL $sbcl_downloading..."
     case "$downloader" in
         curl )
-            # curl -L $sbcl_redirect --remote-name ;;
-            curl -L $sbcl_files_dl/$sbcl_latest_available/$sbcl_file --remote-name ;;
+            curl -L "$sbcl_downloading" --remote-name ;;
         wget )
-            # wget -q --show-progress -O $sbcl_file $sbcl_redirect ;;
-            wget -q --show-progress $sbcl_files_dl/$sbcl_latest_available/$sbcl_file ;;
+            wget -q --show-progress "$sbcl_downloading" ;;
         *)
             script_fail "Unrecognized downloader" "$downloader" ;;  # should never happen
     esac
@@ -342,7 +329,19 @@ case "$command" in
         esac
         ;;
     get )
-        download_sbcl
+        case "$modifier" in
+            "" | latest )
+                download_sbcl "$sbcl_latest_available"
+                ;;
+            * )
+                if ! $(echo "$modifier" | grep -E ^$match_version > /dev/null) ; then
+                    script_fail "Not a version number" "get $modifer"
+                elif ! $(echo "$sbcl_available" | grep "$modifier" > /dev/null) ; then
+                    script_fail "Version not available" "$modifier"
+                fi
+                download_sbcl "$modifier"
+                ;;
+        esac
         ;;
     build )
         if ! [ -f $sbup_dir/$sbcl_file ] ; then
