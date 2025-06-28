@@ -4,8 +4,13 @@
 set -e
 #set -x
 
+# Global build parameters.
 sbup_version=0.10.0
 sbup_dir=$HOME/.sbup
+downloading_url=
+building_version=
+building_file=
+building_dir=
 
 if ! [ -d "$sbup_dir" ] ; then mkdir "$sbup_dir" ; fi
 reset_dir=$(pwd)
@@ -93,7 +98,7 @@ sbcl_built=$(find "$sbup_dir" -maxdepth 1 -type d |
 
 sbcl_latest_built=$(echo $sbcl_built | awk '{print $1}')
 
-# Get a download url.
+# Get available versions.
 sbcl_files_dl="https://sourceforge.net/projects/sbcl/files/sbcl"
 sbcl_version_line='<th scope="row" headers="files_name_h"><a href="/projects/sbcl/files/sbcl/'
 sbcl_available=
@@ -118,9 +123,6 @@ sbcl_latest_available=$(echo $sbcl_available | awk '{print $1}')
 
 # Construct latest file name.
 sbcl_file="sbcl-$sbcl_latest_available-source.tar.bz2"
-
-# Construct build directory name.
-sbcl_dir=$sbup_dir/sbcl-$sbcl_latest_available
 
 check_sbcl() {
     if [ "$cur_ver" = "$sbcl_latest_available" ]
@@ -161,13 +163,13 @@ list_available() {
 
 # Download SBCL to current directory.
 download_sbcl() {
-    sbcl_downloading="$sbcl_files_dl/$1/sbcl-$1-source.tar.bz2"
-    echo "Downloading SBCL $sbcl_downloading..."
+    downloading_url="$sbcl_files_dl/$building_version/sbcl-$building_version-source.tar.bz2"
+    echo "Downloading SBCL $building_version..."
     case "$downloader" in
         curl )
-            curl -L "$sbcl_downloading" --remote-name ;;
+            curl -L "$downloading_url" --remote-name ;;
         wget )
-            wget -q --show-progress "$sbcl_downloading" ;;
+            wget -q --show-progress "$downloading_url" ;;
         *)
             script_fail "Unrecognized downloader" "$downloader" ;;  # should never happen
     esac
@@ -175,58 +177,58 @@ download_sbcl() {
 
 # Extract SBCL build directory into current directory.
 unpack_sbcl() {
-    if [ -f $sbup_dir/$sbcl_file ]
+    if [ -f $building_file ]
     then
-        echo "Unpacking SBCL $sbcl_latest_available..."
-        tar -xvf $sbcl_file
+        echo "Unpacking SBCL $building_version..."
+        tar -xvf $building_file
     else
-        script_fail "SBCL was not downloaded"
+        script_fail "SBCL tarball not found" "$building_version"
     fi
 }
 
 build_sbcl() {
-    if [ -d $sbcl_dir ]
+    if [ -d $building_dir ]
     then
-        echo "Building SBCL $sbcl_latest_available..."
-        cd $sbcl_dir
+        echo "Building SBCL $building_version..."
+        cd $building_dir
         sh make.sh $@
     else
-        script_fail "SBCL was not extracted"
+        script_fail "SBCL version not extracted" "$building_version"
     fi
 }
 
 test_sbcl() {
-    if [ -d $sbcl_dir ] && [ -d $sbcl_dir/obj ]
+    if [ -d $building_dir ] && [ -d $building_dir/obj ]
     then
         echo "Running SBCL $sbcl_latest_available tests..."
-        cd $sbcl_dir/tests
+        cd $building_dir/tests
         sh run-tests.sh
     else
-        script_fail "SBCL was not built"
+        script_fail "SBCL version not built" "$building_version"
     fi
 }
 
 build_sbcl_docs() {
-    if [ -d $sbcl_dir ] && [ -d $sbcl_dir/doc ]
+    if [ -d $building_dir ] && [ -d $building_dir/doc ]
     then
-        echo "Building SBCL $sbcl_latest_available documentation..."
-        cd $sbcl_dir/doc/manual
+        echo "Building SBCL $build_version documentation..."
+        cd $building_dir/doc/manual
         make
     else
-        script_fail "No documentation directory found"
+        script_fail "No documentation directory found" "$building_dir/doc"
     fi
 }
 
 install_sbcl() {
-    if [ -d $sbcl_dir ] && [ -d $sbcl_dir/doc ]
+    if [ -d $building_dir ] && [ -d $building_dir/obj ]
     then
         echo "Installing SBCL $sbcl_latest_available..."
-        cd $sbcl_dir
+        cd $building_dir
         export INSTALL_ROOT="$1"
         $2 sh install.sh
         unset INSTALL_ROOT
     else
-        script_fail "SBCL was not built"
+        script_fail "SBCL version not built" "$building version"
     fi
 }
 
@@ -331,40 +333,88 @@ case "$command" in
     get )
         case "$modifier" in
             "" | latest )
-                download_sbcl "$sbcl_latest_available"
+                # download_sbcl "$sbcl_latest_available"
+                building_version="$sbcl_latest_available"
                 ;;
             * )
                 if ! $(echo "$modifier" | grep -E ^$match_version > /dev/null) ; then
-                    script_fail "Not a version number" "get $modifer"
+                    script_fail "Not a version number" "$command $modifer"
                 elif ! $(echo "$sbcl_available" | grep "$modifier" > /dev/null) ; then
-                    script_fail "Version not available" "$modifier"
+                    script_fail "Version not available" "$command $modifier"
                 fi
-                download_sbcl "$modifier"
+                building_version="$modifier"
                 ;;
         esac
+        download_sbcl
         ;;
     build )
-        if ! [ -f $sbup_dir/$sbcl_file ] ; then
-            echo $sbup_dir/$sbcl_file
+        case "$modifier" in
+            "" | latest )
+                building_version="$sbcl_latest_available"
+                ;;
+            * )
+                if ! $(echo "$modifier" | grep -E ^$match_version > /dev/null) ; then
+                    script_fail "Not a version number" "$command $modifer"
+                fi
+                building_version="$modifier"
+                ;;
+        esac
+        building_file="$sbup_dir/sbcl-$building_version-source.tar.bz2"
+        building_dir="$sbup_dir/sbcl-$building_version"
+        if ! [ -f "$building_file" ] ; then
+            echo "$building_file"
             download_sbcl
         fi
-        unpack_sbcl
-        build_sbcl $make_suffix
+        if ! [ -d "$building_dir" ] ; then
+            unpack_sbcl
+        fi
+        if ! [ -d $building_dir/obj ]
+        then
+            build_sbcl $make_suffix
+        fi
         if [ -z "$nodocs" ] ; then
             build_sbcl_docs
         fi
         ;;
     test )
+        case "$modifier" in
+            "" | latest )
+                building_version="$sbcl_latest_available"
+                ;;
+            * )
+                if ! $(echo "$modifier" | grep -E ^$match_version > /dev/null) ; then
+                    script_fail "Not a version number" "$command $modifer"
+                fi
+                building_version="$modifier"
+                ;;
+        esac
+        building_dir="$sbup_dir/sbcl-$building_version"
         test_sbcl
         ;;
-    update )
-        if ! [ -f $sbup_dir/$sbcl_file ] ; then
+    update | install )
+        case "$modifier" in
+            "" | latest )
+                building_version="$sbcl_latest_available"
+                ;;
+            * )
+                if ! $(echo "$modifier" | grep -E ^$match_version > /dev/null) ; then
+                    script_fail "Not a version number" "$command $modifer"
+                fi
+                building_version="$modifier"
+                ;;
+        esac
+        building_file="$sbup_dir/sbcl-$building_version-source.tar.bz2"
+        building_dir="$sbup_dir/sbcl-$building_version"
+        if ! [ -f "$building_file" ] ; then
             download_sbcl
         fi
-        if ! [ -d $sbcl_dir ] ; then
+        if ! [ -d "$building_dir" ] ; then
             unpack_sbcl
         fi
-        build_sbcl $make_suffix
+        if ! [ -d $building_dir/obj ]
+        then
+            build_sbcl $make_suffix
+        fi
         if [ -z "$notest" ] ; then
             test_sbcl
         fi
@@ -372,7 +422,7 @@ case "$command" in
             build_sbcl_docs
         fi
         if [ -z "$noinstall" ] ; then
-            install_sbcl $install_root $install_mode
+            install_sbcl "$install_root" "$install_mode"
         fi
         ;;
     help | "" )
