@@ -5,7 +5,7 @@ set -e
 #set -x
 
 # Global build parameters.
-sbup_version=0.10.0
+sbup_version=0.11.0
 sbup_dir=$HOME/.sbup
 sbcl_show_count=
 downloading_url=
@@ -410,7 +410,6 @@ case "$command" in
     get )
         case "$modifier" in
             "" | latest )
-                # download_sbcl "$sbcl_latest_available"
                 building_version="$sbcl_latest_available"
                 ;;
             * )
