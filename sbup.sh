@@ -25,55 +25,103 @@ elif type wget > /dev/null ; then
 else
     type curl
     type wget
-    echo ${0##*/}": Either \`curl\` or \`wget\` must be installed"
+    printf "%s\n" "${0##*/}: Either \`curl\` or \`wget\` must be installed"
     cd "$reset_dir"
     exit 1
+fi
+
+# Detect pager utility. Use `less` if possible, but `more` is POSIX.
+pager=
+if type less > /dev/null ; then
+    pager=less
+else
+    pager=more
 fi
 
 match_version='[[:digit:]]+.[[:digit:]]+.[[:digit:]]+'
 
 usage() {
     printf "sbup version %s\n" $sbup_version
-    echo ""
-    echo "Usage:"
-    echo "sbup [command] {Sbup options} [-- {SBCL options}]"
-    echo ""
-    echo "Commands:"
-    echo "check  ... Check for new version of SBCL"
-    echo "list   ... Show available SBCL versions"
-    echo "           \`list\`, \`list recent\` lists the most recent versions"
-    echo "           \`list all\` lists all available versions"
-    echo "           \`list <N>\` lists the most recent <N> versions"
-    echo "           \`list downloads\`, \`list downloaded\`, \`list dl\`"
-    echo "               lists all downloaded SBCL tarballs"
-    echo "           \`list built\`, \`list b\` lists all available SBCL builds"
-    echo "get    ... Download latest version of SBCL to current directory"
-    echo "build  ... Download latest version of SBCL and build in current directory"
-    echo "test   ... Run tests on the latest build of SBCL"
-    echo "update ... Download, build, test and install SBCL"
-    echo "help   ... Show this help screen"
-    echo ""
-    echo "Options:"
-    echo "-i | --install_root ... Configure SBCL \`INSTALL_ROOT\`"
-    echo "--nodocs            ... Disable building of documentation"
-    echo "                        Used with \`build\` and \`update\`"
-    echo "--noinstall         ... Disable final installation"
-    echo "                        Used with \`update\`"
-    echo "--notest            ... Disable running of tests"
-    echo "                        Used with \`update\`"
-    echo "-u | --user         ... Enable user installation (without \`sudo\`)"
+    printf "\n"
+    printf "%s\n" "Usage:"
+    printf "%s\n" "------"
+    printf "%s\n" "sbup [command] {Sbup options} [-- {SBCL options}]"
+    printf "%s\n" ""
+    printf "%s\n" "Commands:"
+    printf "%s\n" "---------"
+    printf "%s\n" "check   ... Check for new release of SBCL"
+    printf "%s\n" ""
+    printf "%s\n" "list    ... Show available SBCL versions"
+    printf "%s\n" "            \`list\`, \`list recent\`"
+    printf "%s\n" "                lists the most recent versions"
+    printf "%s\n" "            \`list all\`"
+    printf "%s\n" "                lists all available versions"
+    printf "%s\n" "            \`list <N>\`"
+    printf "%s\n" "                lists the most recent <N> versions"
+    printf "%s\n" "            \`list downloads\`, \`list downloaded\`, \`list dl\`"
+    printf "%s\n" "                lists all downloaded SBCL tarballs"
+    printf "%s\n" "            \`list built\`, \`list b\`"
+    printf "%s\n" "                lists all available SBCL builds"
+    printf "%s\n" ""
+    printf "%s\n" "get     ... Download SBCL tarball to current directory"
+    printf "%s\n" "            \`get\`, \`get latest\`"
+    printf "%s\n" "                downloads the most recent release"
+    printf "%s\n" "            \`get <VERSION>\`"
+    printf "%s\n" "                downloads the specified version"
+    printf "%s\n" ""
+    printf "%s\n" "build   ... Download SBCL tarball and build in current directory"
+    printf "%s\n" "            Builds documentation unless \`--nodocs\` is specified"
+    printf "%s\n" "            \`build\`, \`build latest\`"
+    printf "%s\n" "                download latest release if necessary, then build"
+    printf "%s\n" "            \`build <VERSION>\`"
+    printf "%s\n" "                download specified version if necessary, then build"
+    printf "%s\n" ""
+    printf "%s\n" "test    ... Run SBCL test suite"
+    printf "%s\n" "            \`test\`, \`test latest\`"
+    printf "%s\n" "                run tests for the most recent release"
+    printf "%s\n" "            \`test <VERSION>\`"
+    printf "%s\n" "                run tests for the specified version"
+    printf "%s\n" ""
+    printf "%s\n" "update  ... Download, build, test and install SBCL"
+    printf "%s\n" "            Download and build as necessary"
+    printf "%s\n" "            Builds documentation unless \`--nodocs\` is specified"
+    printf "%s\n" "            Runs tests unless \`--notest\` is specified"
+    printf "%s\n" "            Installs SBCL unless \`--noinstall\` is specified"
+    printf "%s\n" "            \`update\`, \`update latest\`"
+    printf "%s\n" "                update to most recent release"
+    printf "%s\n" "            \`update <VERSION>\`"
+    printf "%s\n" "                update to specified version"
+    printf "%s\n" ""
+    printf "%s\n" "install ... Alias for \`update\`"
+    printf "%s\n" ""
+    printf "%s\n" "help    ... Show this help screen"
+    printf "%s\n" ""
+    printf "%s\n" "Options:"
+    printf "%s\n" "--------"
+    printf "%s\n" "-i | --install_root ... Configure SBCL \`INSTALL_ROOT\`"
+    printf "%s\n" ""
+    printf "%s\n" "--nodocs            ... Disable building of documentation"
+    printf "%s\n" "                        Used with \`build\` and \`update\`"
+    printf "%s\n" ""
+    printf "%s\n" "--noinstall         ... Disable final installation"
+    printf "%s\n" "                        Used with \`update\`"
+    printf "%s\n" ""
+    printf "%s\n" "--notest            ... Disable running of tests"
+    printf "%s\n" "                        Used with \`update\`"
+    printf "%s\n" ""
+    printf "%s\n" "-u | --user         ... Enable user installation (without \`sudo\`)"
 }
 
 script_fail() {
     printf "*** %s : %s ***\n" "$1" "$2" >&2
-    usage
+    #usage
     cd "$reset_dir"
     exit 2
 }
 
 # Check for installed SBCL
 if ! type sbcl ; then
-    echo "SBCL is not currently installed: no update possible"
+    printf "%s\n" "SBCL is not currently installed: no update possible"
     cd "$reset_dir"
     exit 1
 fi
@@ -124,15 +172,15 @@ sbcl_latest_available=$(echo $sbcl_available | awk '{print $1}')
 check_sbcl() {
     if [ "$cur_ver" = "$sbcl_latest_available" ]
     then
-        echo "Already using most recent SBCL: $cur_ver"
+        printf "%s\n" "Already using most recent SBCL: $cur_ver"
     elif [ "$sbcl_latest_built" = "$sbcl_latest_available" ]
     then
-        echo "Most recent SBCL already built: $sbcl_latest_built"
+        printf "%s\n" "Most recent SBCL already built: $sbcl_latest_built"
     elif [ "$sbcl_latest_downloaded" = "$sbcl_latest_available" ]
     then
-        echo "Most recent SBCL already downloaded: $sbcl_latest_downloaded"
+        printf "%s\n" "Most recent SBCL already downloaded: $sbcl_latest_downloaded"
     else
-        echo "New version of SBCL available: $sbcl_latest_available"
+        printf "%s\n" "New version of SBCL available: $sbcl_latest_available"
     fi
 }
 
@@ -148,12 +196,12 @@ list_available() {
     for sbcl_version in $sbcl_available ; do
         if [ $1 = "all" ] ;
         then
-            echo $sbcl_version ; continue
+            printf "%s\n" "$sbcl_version" ; continue
         elif [ $sbcl_show_count -eq 0 ] ;
         then
             break
         else
-            echo $sbcl_version ; sbcl_show_count=$((sbcl_show_count-1))
+            printf "%s\n" "$sbcl_version" ; sbcl_show_count=$((sbcl_show_count-1))
         fi
     done
 }
@@ -161,7 +209,7 @@ list_available() {
 # Download SBCL to current directory.
 download_sbcl() {
     downloading_url="$sbcl_files_dl/$building_version/sbcl-$building_version-source.tar.bz2"
-    echo "Downloading SBCL $building_version..."
+    printf "%s\n" "Downloading SBCL $building_version..."
     case "$downloader" in
         curl )
             curl -L "$downloading_url" --remote-name ;;
@@ -176,7 +224,7 @@ download_sbcl() {
 unpack_sbcl() {
     if [ -f $building_file ]
     then
-        echo "Unpacking SBCL $building_version..."
+        printf "%s\n" "Unpacking SBCL $building_version..."
         tar -xvf $building_file
     else
         script_fail "SBCL tarball not found" "$building_version"
@@ -186,7 +234,7 @@ unpack_sbcl() {
 build_sbcl() {
     if [ -d $building_dir ]
     then
-        echo "Building SBCL $building_version..."
+        printf "%s\n" "Building SBCL $building_version..."
         cd $building_dir
         sh make.sh $@
     else
@@ -197,7 +245,7 @@ build_sbcl() {
 test_sbcl() {
     if [ -d $building_dir ] && [ -d $building_dir/obj ]
     then
-        echo "Running SBCL $building_version tests..."
+        printf "%s\n" "Running SBCL $building_version tests..."
         cd $building_dir/tests
         sh run-tests.sh
     else
@@ -208,7 +256,7 @@ test_sbcl() {
 build_sbcl_docs() {
     if [ -d $building_dir ] && [ -d $building_dir/doc ]
     then
-        echo "Building SBCL $building_version documentation..."
+        printf "%s\n" "Building SBCL $building_version documentation..."
         cd $building_dir/doc/manual
         make
     else
@@ -219,7 +267,7 @@ build_sbcl_docs() {
 install_sbcl() {
     if [ -d $building_dir ] && [ -d $building_dir/obj ]
     then
-        echo "Installing SBCL $building_version..."
+        printf "%s\n" "Installing SBCL $building_version..."
         cd $building_dir
         export INSTALL_ROOT="$1"
         $2 sh install.sh
@@ -359,7 +407,7 @@ case "$command" in
         building_file="$sbup_dir/sbcl-$building_version-source.tar.bz2"
         building_dir="$sbup_dir/sbcl-$building_version"
         if ! [ -f "$building_file" ] ; then
-            echo "$building_file"
+            printf "%s\n" "$building_file"
             download_sbcl
         fi
         if ! [ -d "$building_dir" ] ; then
@@ -423,7 +471,7 @@ case "$command" in
         fi
         ;;
     help | "" )
-        usage
+        usage | $pager
         ;;
     * )
         script_fail "Unrecognized command" "$command"
