@@ -120,6 +120,35 @@ script_fail() {
     exit 2
 }
 
+# Performs initial tilde expansion on a path string.
+tilde_expand() {
+    expanded=
+    no_tilde=${1#"~/"}
+    if [ "$no_tilde" = "$1" ] ; then       # possible logname expansion
+        no_tilde=${1#"~"}
+        if [ "$no_tilde" =  "$1" ] ; then  # no tilde expansion to perform
+            expanded="$no_tilde"
+        elif [ -z "$no_tilde" ] ; then     # simple $HOME expansion
+            expanded="$HOME"
+        else                               # possible logname expansion
+            logname=${no_tilde%%/*}
+            logpath=${no_tilde#*/}
+            if [ "$logpath" = "$no_tilde" ] ; then logpath='' ; fi  # no path after logname
+            # Linux only:
+            expanded=$(cat /etc/passwd | grep "$logname" | cut -d: -f6)
+            # Fall back to unexpanded path if logname is not found.
+            # Otherwise, if there is a logpath add it to the expanded logname.
+            if [ -z "$expanded" ] ; then expanded="$1"
+            elif ! [ -z "$logpath" ] ; then expanded="$expanded/$logpath"
+            fi
+        fi
+    else  # Just a simple $HOME expansion.
+        expanded="$HOME/$no_tilde"
+    fi
+    # Remove trailing slashes before printing results.
+    printf '%s' "${expanded%/}"
+}
+
 # Check for installed SBCL
 if ! type sbcl ; then
     printf "%s\n" "SBCL is not currently installed: no update possible"
@@ -320,14 +349,7 @@ do
     fi
     case "$OPT" in
         i | install_root )
-            require_arg
-            no_tilde=${OPTARG#"~/"}
-            if [ "$no_tilde" = "$OPTARG" ] ; then
-                install_root="$no_tilde"
-            else
-                install_root="$HOME/$no_tilde"
-            fi
-            ;;
+            require_arg ; install_root=$(tilde_expand "$OPTARG") ;;
         nodocs )
             nodocs=true ;;
         noinstall )
