@@ -314,13 +314,20 @@ require_arg() {
 while getopts i:u-: OPT
 do
     if [ $OPT = "-" ]  ; then
-        OPT=${OPTARG%%=*}     # get long option
+        OPT=${OPTARG%%=*}      # get long option
         OPTARG=${OPTARG#$OPT}  # get long option argument
         OPTARG=${OPTARG#=}
     fi
     case "$OPT" in
         i | install_root )
-            require_arg ; install_root="$(cd $OPTARG ; pwd)" ;;
+            require_arg
+            no_tilde=${OPTARG#"~/"}
+            if [ "$no_tilde" = "$OPTARG" ] ; then
+                install_root="$no_tilde"
+            else
+                install_root="$HOME/$no_tilde"
+            fi
+            ;;
         nodocs )
             nodocs=true ;;
         noinstall )
