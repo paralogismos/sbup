@@ -121,9 +121,6 @@ esac
 # Get latest version number.
 sbcl_latest_available=$(echo $sbcl_available | awk '{print $1}')
 
-# Construct latest file name.
-sbcl_file="sbcl-$sbcl_latest_available-source.tar.bz2"
-
 check_sbcl() {
     if [ "$cur_ver" = "$sbcl_latest_available" ]
     then
@@ -200,7 +197,7 @@ build_sbcl() {
 test_sbcl() {
     if [ -d $building_dir ] && [ -d $building_dir/obj ]
     then
-        echo "Running SBCL $sbcl_latest_available tests..."
+        echo "Running SBCL $building_version tests..."
         cd $building_dir/tests
         sh run-tests.sh
     else
@@ -211,7 +208,7 @@ test_sbcl() {
 build_sbcl_docs() {
     if [ -d $building_dir ] && [ -d $building_dir/doc ]
     then
-        echo "Building SBCL $build_version documentation..."
+        echo "Building SBCL $building_version documentation..."
         cd $building_dir/doc/manual
         make
     else
@@ -222,7 +219,7 @@ build_sbcl_docs() {
 install_sbcl() {
     if [ -d $building_dir ] && [ -d $building_dir/obj ]
     then
-        echo "Installing SBCL $sbcl_latest_available..."
+        echo "Installing SBCL $building_version..."
         cd $building_dir
         export INSTALL_ROOT="$1"
         $2 sh install.sh
