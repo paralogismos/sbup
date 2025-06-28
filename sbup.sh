@@ -7,6 +7,7 @@ set -e
 # Global build parameters.
 sbup_version=0.10.0
 sbup_dir=$HOME/.sbup
+sbcl_show_count=
 downloading_url=
 building_version=
 building_file=
@@ -184,8 +185,14 @@ check_sbcl() {
     fi
 }
 
+display_version() {
+    if [ "$1" = "$cur_ver" ]
+    then printf "> %s <\n" "$1"
+    else printf "  %s\n" "$1"
+    fi
+}
+
 list_available() {
-    sbcl_show_count=
     if [ $1 = "recent" ] ;
     then
         sbcl_show_count=10 ;
@@ -196,12 +203,12 @@ list_available() {
     for sbcl_version in $sbcl_available ; do
         if [ $1 = "all" ] ;
         then
-            printf "%s\n" "$sbcl_version" ; continue
+            display_version "$sbcl_version" ; continue
         elif [ $sbcl_show_count -eq 0 ] ;
         then
             break
         else
-            printf "%s\n" "$sbcl_version" ; sbcl_show_count=$((sbcl_show_count-1))
+            display_version "$sbcl_version" ; sbcl_show_count=$((sbcl_show_count-1))
         fi
     done
 }
@@ -354,17 +361,13 @@ case "$command" in
             dl | downloads | downloaded)
                 printf "available SBCL tarballs:\n"
                 for dl in $sbcl_downloaded ; do
-                    if [ "$dl" = "$cur_ver" ] ; then printf "> %s <\n" "$dl"
-                    else printf "  %s\n" "$dl"
-                    fi
+                    display_version "$dl"
                 done
                 ;;
             b | built)
                 printf "available SBCL builds:\n"
                 for build in $sbcl_built ; do
-                    if [ "$build" = "$cur_ver" ] ; then printf "> %s <\n" "$build"
-                    else printf "  %s\n" "$build"
-                    fi
+                    display_version "$build"
                 done
                 ;;
             *[!0123456789]* )
