@@ -8,7 +8,8 @@ set -e
 sbup_version=0.11.0
 sbup_dir=$HOME/.sbup
 sbcl_show_count=
-downloading_url=
+dl_url=
+dl_asc=
 building_version=
 building_file=
 building_dir=
@@ -244,13 +245,27 @@ list_available() {
 
 # Download SBCL to current directory.
 download_sbcl() {
-    downloading_url="$sbcl_files_dl/$building_version/sbcl-$building_version-source.tar.bz2"
     printf "%s\n" "Downloading SBCL $building_version..."
+    dl_url="$sbcl_files_dl/$building_version"
     case "$downloader" in
         curl )
-            curl -L "$downloading_url" --remote-name ;;
+            printf "%s\n" "Downloading SBCL $building_version source"
+            curl -L "$dl_url/sbcl-$building_version-source.tar.bz2" --remote-name
+            printf "%s\n" "Downloading SBCL $building_version signature"
+            dl_asc=$(curl -L --silent "$sbcl_files_dl/$building_version" \
+                         | grep -Eo "sbcl-[[:digit:]]+.[[:digit:]]+.[[:digit:]]+-[[:alpha:]]+\.asc" \
+                         | head -n1)
+            curl -L "$dl_url/$dl_asc" --remote-name
+            ;;
         wget )
-            wget -q --show-progress "$downloading_url" ;;
+            printf "%s\n" "Downloading SBCL $building_version source"
+            wget -q --show-progress "$dl_url/sbcl-$building_version-source.tar.bz2"
+            printf "%s\n" "Downloading SBCL $building_version signature"
+            dl_asc=$(wget -q -O- "$sbcl_files_dl/$building_version" \
+                         | grep -Eo "sbcl-[[:digit:]]+.[[:digit:]]+.[[:digit:]]+-[[:alpha:]]+\.asc" \
+                         | head -n1)
+            wget -q --show-progress "$dl_url/$dl_asc"
+            ;;
         *)
             script_fail "Unrecognized downloader" "$downloader" ;;  # should never happen
     esac
