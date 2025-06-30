@@ -518,6 +518,7 @@ case "$command" in
         ;;
     help | "" )
         usage | $pager
+        exit 0
         ;;
     * )
         script_fail "Unrecognized command" "$command"
