@@ -40,7 +40,7 @@ else
     pager=more
 fi
 
-match_version='[[:digit:]]+.[[:digit:]]+.[[:digit:]]+'
+match_version='[[:digit:]]+\.[[:digit:]]+\.[[:digit:]]+'
 
 usage() {
     printf "sbup version %s\n" $sbup_version
