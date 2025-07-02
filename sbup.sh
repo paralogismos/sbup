@@ -6,7 +6,7 @@ set -e
 
 # Global build parameters.
 sbup_version=0.11.0
-sbup_dir=$HOME/.sbup
+sbup_dir="$HOME/.sbup"
 sbcl_show_count=
 dl_url=
 dl_asc=
