@@ -11,6 +11,7 @@ sbcl_show_count=
 dl_url=
 dl_asc=
 building_version=
+building_type=
 building_file=
 building_dir=
 
@@ -188,6 +189,39 @@ esac
 # Get latest version number.
 sbcl_latest_available=$(echo $sbcl_available | awk '{print $1}')
 
+# Download SBCL to current directory.
+download_sbcl() {
+    printf "%s\n" "Downloading SBCL $building_version..."
+    dl_url="$sbcl_files_dl/$building_version"
+    case "$1" in
+        src ) building_type="source.tar.bz2" ;;
+        bin ) building_type="x86-64-linux-binary.tar.bz2" ;;
+        * ) script_fail "Unrecognized download file type" "$1" ;;
+    esac
+    case "$downloader" in
+        curl )
+            printf "%s\n" "Downloading SBCL $building_version source"
+            curl -L "$dl_url/sbcl-$building_version-$building_type" --remote-name
+            printf "%s\n" "Downloading SBCL $building_version signature"
+            dl_asc=$(curl -L --silent "$sbcl_files_dl/$building_version" \
+                         | grep -Eo "sbcl-[[:digit:]]+.[[:digit:]]+.[[:digit:]]+-[[:alpha:]]+\.asc" \
+                         | head -n1)
+            curl -L "$dl_url/$dl_asc" --remote-name
+            ;;
+        wget )
+            printf "%s\n" "Downloading SBCL $building_version source"
+            wget -q --show-progress "$dl_url/sbcl-$building_version-$building_type"
+            printf "%s\n" "Downloading SBCL $building_version signature"
+            dl_asc=$(wget -q -O- "$sbcl_files_dl/$building_version" \
+                         | grep -Eo "sbcl-[[:digit:]]+.[[:digit:]]+.[[:digit:]]+-[[:alpha:]]+\.asc" \
+                         | head -n1)
+            wget -q --show-progress "$dl_url/$dl_asc"
+            ;;
+        *)
+            script_fail "Unrecognized downloader" "$downloader" ;;  # should never happen
+    esac
+}
+
 # Check for installed SBCL
 if ! type sbcl_oops ; then
     printf "%s" "SBCL is not currently installed. Try to install binary? (y/n) [default y]: "
@@ -195,6 +229,8 @@ if ! type sbcl_oops ; then
     case "$do_install" in
         y | Y | yes | Yes | YES | "" )
             printf "%s\n" "binary installation support coming soon..."
+            building_version="$sbcl_latest_available"
+            download_sbcl bin
             cd "$reset_dir"
             exit 0
             ;;
@@ -250,34 +286,6 @@ list_available() {
             display_version "$sbcl_version" ; sbcl_show_count=$((sbcl_show_count-1))
         fi
     done
-}
-
-# Download SBCL to current directory.
-download_sbcl() {
-    printf "%s\n" "Downloading SBCL $building_version..."
-    dl_url="$sbcl_files_dl/$building_version"
-    case "$downloader" in
-        curl )
-            printf "%s\n" "Downloading SBCL $building_version source"
-            curl -L "$dl_url/sbcl-$building_version-source.tar.bz2" --remote-name
-            printf "%s\n" "Downloading SBCL $building_version signature"
-            dl_asc=$(curl -L --silent "$sbcl_files_dl/$building_version" \
-                         | grep -Eo "sbcl-[[:digit:]]+.[[:digit:]]+.[[:digit:]]+-[[:alpha:]]+\.asc" \
-                         | head -n1)
-            curl -L "$dl_url/$dl_asc" --remote-name
-            ;;
-        wget )
-            printf "%s\n" "Downloading SBCL $building_version source"
-            wget -q --show-progress "$dl_url/sbcl-$building_version-source.tar.bz2"
-            printf "%s\n" "Downloading SBCL $building_version signature"
-            dl_asc=$(wget -q -O- "$sbcl_files_dl/$building_version" \
-                         | grep -Eo "sbcl-[[:digit:]]+.[[:digit:]]+.[[:digit:]]+-[[:alpha:]]+\.asc" \
-                         | head -n1)
-            wget -q --show-progress "$dl_url/$dl_asc"
-            ;;
-        *)
-            script_fail "Unrecognized downloader" "$downloader" ;;  # should never happen
-    esac
 }
 
 # Extract SBCL build directory into current directory.
@@ -445,7 +453,7 @@ case "$command" in
                 building_version="$modifier"
                 ;;
         esac
-        download_sbcl
+        download_sbcl src
         ;;
     build )
         case "$modifier" in
@@ -463,7 +471,7 @@ case "$command" in
         building_dir="$sbup_dir/sbcl-$building_version"
         if ! [ -f "$building_file" ] ; then
             printf "%s\n" "$building_file"
-            download_sbcl
+            download_sbcl src
         fi
         if ! [ -d "$building_dir" ] ; then
             unpack_sbcl
@@ -506,7 +514,7 @@ case "$command" in
         building_file="$sbup_dir/sbcl-$building_version-source.tar.bz2"
         building_dir="$sbup_dir/sbcl-$building_version"
         if ! [ -f "$building_file" ] ; then
-            download_sbcl
+            download_sbcl src
         fi
         if ! [ -d "$building_dir" ] ; then
             unpack_sbcl
