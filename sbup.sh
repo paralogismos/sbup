@@ -116,7 +116,6 @@ usage() {
 
 script_fail() {
     printf "*** %s : %s ***\n" "$1" "$2" >&2
-    #usage
     cd "$reset_dir"
     exit 2
 }
@@ -149,17 +148,6 @@ tilde_expand() {
     # Remove trailing slashes before printing results.
     printf '%s' "${expanded%/}"
 }
-
-# Check for installed SBCL
-if ! type sbcl ; then
-    printf "%s\n" "SBCL is not currently installed: no update possible"
-    cd "$reset_dir"
-    exit 1
-fi
-
-# Get installed version number.
-cur_ver=$(sbcl --version)
-cur_ver=${cur_ver##*[ ]}
 
 # Get downloaded version numbers.
 sbcl_downloaded=$(find "$sbup_dir" -maxdepth 1 -type f |
@@ -199,6 +187,27 @@ esac
 
 # Get latest version number.
 sbcl_latest_available=$(echo $sbcl_available | awk '{print $1}')
+
+# Check for installed SBCL
+if ! type sbcl_oops ; then
+    printf "%s" "SBCL is not currently installed. Try to install binary? (y/n) [default y]: "
+    read do_install
+    case "$do_install" in
+        y | Y | yes | Yes | YES | "" )
+            printf "%s\n" "binary installation support coming soon..."
+            cd "$reset_dir"
+            exit 0
+            ;;
+        * )
+            cd "$reset_dir"
+            exit 1
+            ;;
+    esac
+fi
+
+# Get installed version number.
+cur_ver=$(sbcl --version)
+cur_ver=${cur_ver##*[ ]}
 
 check_sbcl() {
     if [ "$cur_ver" = "$sbcl_latest_available" ]
