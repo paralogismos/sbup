@@ -223,7 +223,7 @@ download_sbcl() {
 }
 
 # Check for installed SBCL
-if ! type sbcl_oops ; then
+if ! type sbcl ; then
     printf "%s" "SBCL is not currently installed. Try to install binary? (y/n) [default y]: "
     read do_install
     case "$do_install" in
