@@ -1,0 +1,36 @@
+# Makefile.in
+.POSIX:
+SHELL=@shell
+
+EXEC_NAME=@exec_name
+EXT=@ext
+LOCAL_BUILD_ARTIFACTS=@local_build_artifacts
+
+# Default installation directory.
+BINDIR=@bindir
+
+SRC_FILE=$(EXEC_NAME).$(EXT)
+INSTALL_PATH=$(BINDIR)/$(EXEC_NAME)
+
+.PHONY: all
+all: install
+
+install: $(SRC_FILE)
+	@cp $(SRC_FILE) $(INSTALL_PATH)
+	@chmod +x $(INSTALL_PATH)  # Set executable permissions
+	@echo $(EXEC_NAME) installed in $(BINDIR).
+
+.PHONY: reinstall uninstall distclean Makefile
+reinstall:
+	@make -s uninstall
+	@make -s install
+
+uninstall:
+	@rm -f $(INSTALL_PATH)
+	@echo $(EXEC_NAME) has been uninstalled.
+
+distclean:
+	@rm -f $(LOCAL_BUILD_ARTIFACTS)
+
+Makefile: Makefile.in config.status
+	@$(SHELL) config.status
